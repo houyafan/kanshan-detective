@@ -31,8 +31,11 @@ import { api } from "./api";
 import { useApp } from "./state";
 import type { Evidence, SearchResult, TaskConfig } from "./types";
 
-const kanshanPortrait = "/assets/kanshan/kanshan-cutout.png";
-const kanshanTurnaround = "/assets/kanshan/kanshan-turnaround.jpg";
+const caseEvidencePhoto = "/assets/kanshan/case001-evidence-photo.png";
+const poseSearch = "/assets/kanshan/kanshan-pose-search.png";
+const poseRead = "/assets/kanshan/kanshan-pose-read.png";
+const poseThink = "/assets/kanshan/kanshan-pose-think.png";
+const poseClose = "/assets/kanshan/kanshan-pose-close.png";
 
 function pagePath(page: string) {
   return { P01: "/", P02: "/brief", P03: "/desk", P05: "/evidence", P06: "/reasoning", P07: "/report" }[page] || "/desk";
@@ -112,11 +115,7 @@ function HomePage() {
           <p className="kanshan-line">“{caseConfig.copy.home}”</p>
           <div className="home-meta"><span><Clock3 /> {caseConfig.duration}</span><span><ShieldCheck /> 无需登录</span><span><Terminal /> 真实知乎搜索</span></div>
         </div>
-        <div className="kanshan-scene" aria-label="看山侦探">
-          <div className="lamp-cone" />
-          <img src={kanshanPortrait} alt="看山侦探角色" />
-          <div className="desk-shadow" />
-        </div>
+        <div className="hero-image-focus" aria-label="看山侦探事务所场景" />
         <article className="today-case">
           <div className="case-paper-head"><span>今日案件</span><b>NEW</b><i>{caseConfig.caseNumber}</i></div>
           <h2>{caseConfig.title}</h2>
@@ -180,7 +179,8 @@ function BriefPage() {
           <button className="primary-button brief-start" disabled={starting} onClick={begin}>{starting ? "正在开启档案..." : "开始调查"}<ArrowRight /></button>
         </article>
         <aside className="brief-kanshan">
-          <div className="polaroid"><img src={kanshanPortrait} alt="看山" /><span>首席调查员 / 看山</span></div>
+          <div className="polaroid"><img src={caseEvidencePhoto} alt="CASE 001 现场记录" /><span>现场记录 / 07:42</span></div>
+          <img className="brief-reader" src={poseRead} alt="看山正在阅读卷宗" />
           <blockquote>“{caseConfig.copy.brief}”</blockquote>
         </aside>
       </main>
@@ -226,8 +226,6 @@ function DeskPage() {
         </section>
 
         <section className="investigation-desk">
-          <div className="desk-lamp" />
-          <div className="coffee-ring" />
           <div className="desk-grid">
             {caseConfig.tasks.map((task, index) => {
               const status = run.taskStates[task.id];
@@ -247,7 +245,7 @@ function DeskPage() {
         </section>
 
         <aside className={`kanshan-advice ${ready ? "is-ready" : ""}`}>
-          <img src={kanshanPortrait} alt="看山" />
+          <img src={poseThink} alt="看山正在思考" />
           <div><small>看山建议 / PRESET AI</small><p>{ready ? caseConfig.copy.ready : `下一步去“${nextTask?.title || "证据板"}”。先把能回溯的线索收进来。`}</p></div>
           <button className="primary-button" onClick={() => ready ? navigate("/reasoning") : nextTask && openTask(nextTask)}>{ready ? "开始推理" : "继续调查"}<ArrowRight /></button>
         </aside>
@@ -329,7 +327,7 @@ function SearchTask({ runId, recommended, finish, submitting }: { runId: string;
         <form onSubmit={search}><Search /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="输入 2-40 字调查关键词" maxLength={40} /><button disabled={searching || query.trim().length < 2}>{searching ? "调查中..." : "搜索"}</button></form>
         <div className="terminal-options"><div>{recommended.map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}</div><label>数据源<select value={mode} onChange={(e) => setMode(e.target.value as "auto" | "demo")}><option value="auto">真实 CLI 优先</option><option value="demo">演示数据</option></select></label></div>
       </div>
-      {searching ? <div className="search-skeleton"><BrainCircuit /><p>看山正在翻查知乎内容库</p><span>正在核对标题、摘要与原文链接...</span></div> : null}
+      {searching ? <div className="search-skeleton"><img className="search-agent" src={poseSearch} alt="看山正在搜索" /><p>看山正在翻查知乎内容库</p><span>正在核对标题、摘要与原文链接...</span></div> : null}
       {results.length > 0 ? <div className="result-list"><div className="result-list-head"><span>{sourceLabel}</span><small>{results.length} 条结果 · 摘要不等于完整原文</small></div>{results.map((result) => <article key={result.sourceId} className={selected?.sourceId === result.sourceId ? "selected" : ""}><div className="result-meta"><span>{result.type}</span>{result.fallback && <b>演示数据</b>}<small>{result.author}</small></div><h3>{result.title}</h3><p>{result.summary}</p><div className="result-actions"><a href={result.url} target="_blank" rel="noreferrer">查看原文 <ExternalLink /></a><button onClick={() => setSelected(result)}>{selected?.sourceId === result.sourceId ? <><Check /> 已选为线索</> : "标记为线索"}</button></div></article>)}</div> : null}
       {selected ? <div className="claim-bar"><div><CheckCircle2 /><span>已选择</span><strong>{selected.title}</strong></div><button className="primary-button" disabled={submitting} onClick={() => finish({ source: selected })}>{submitting ? "正在归档..." : "领取线索碎片"}<Puzzle /></button></div> : null}
     </section>
@@ -410,7 +408,7 @@ function ReasoningPage() {
     navigate("/report");
   }
 
-  return <CaseShell pageLabel="推理提交" backTo="/evidence"><main className="reasoning-page"><header className="reasoning-heading"><div><small>FINAL REASONING / 最终推理</small><h1>{caseConfig.reasoning.question}</h1></div><div className="attempt-badge">第 {run.attemptCount + 1} 次推理</div></header><div className="reasoning-grid"><section className="option-panel"><h2><span>01</span>核心因素</h2>{caseConfig.reasoning.options.map((option) => <button key={option.id} className={optionId === option.id ? "selected" : ""} onClick={() => setOptionId(option.id)}><b>{option.id}</b><span>{option.label}</span>{optionId === option.id ? <CheckCircle2 /> : <i />}</button>)}</section><section className="chain-panel"><h2><span>02</span>关键证据链 <small>选择 2-3 份</small></h2><div className="evidence-pool">{eligible.map((item) => <button key={item.id} className={selected.includes(item.id) ? "selected" : ""} onClick={() => toggleEvidence(item.id)}><small>{item.type}</small><strong>{item.title}</strong><span>{item.relation}</span>{selected.includes(item.id) && <Check />}</button>)}</div><div className="chain-order"><small>影响排序 / 越靠上越关键</small>{selected.map((id, index) => { const item = eligible.find((e) => e.id === id)!; return <div key={id}><b>{index + 1}</b><span>{item.title}</span><button onClick={() => move(index, -1)} disabled={index === 0} aria-label="上移"><ChevronUp /></button><button onClick={() => move(index, 1)} disabled={index === selected.length - 1} aria-label="下移"><ChevronDown /></button></div>; })}{selected.length === 0 && <p>从上方证据中选择 2-3 份</p>}</div></section><section className="reason-panel"><h2><span>03</span>我的理由 <small>可选</small></h2><textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={120} placeholder="用自己的话解释这条证据链..." /><small>{reason.length} / 120</small><div className="reasoning-boundary"><ShieldCheck /><p>硬规则只检查核心因素和已收集证据。你的理由只用于预制点评，不会被 AI 当作医学事实。</p></div></section></div>{submitting && <div className="ai-review"><BrainCircuit /><div><strong>看山正在核对证据链</strong><span>检查关键来源 · 查找相互印证 · 保留结论边界</span></div></div>}{feedback && <div className={`reason-feedback ${run.status === "CLOSED" ? "success" : "fail"}`}><img src={kanshanPortrait} alt="看山" /><div><small>看山点评 / PRESET REVIEW</small><p>{feedback}</p></div></div>}<footer className="reasoning-submit"><button className="text-button" onClick={() => navigate("/evidence")}><ArrowLeft /> 返回证据板</button>{run.attemptCount >= 3 && run.status !== "CLOSED" ? <button className="assist-button" onClick={assist}><Lightbulb /> 协助结案（评级最高 B）</button> : null}<button className="primary-button" disabled={!optionId || selected.length < 2 || submitting} onClick={submit}>{submitting ? "正在核对..." : "提交推理"}<ArrowRight /></button></footer></main></CaseShell>;
+  return <CaseShell pageLabel="推理提交" backTo="/evidence"><main className="reasoning-page"><header className="reasoning-heading"><div><small>FINAL REASONING / 最终推理</small><h1>{caseConfig.reasoning.question}</h1></div><div className="attempt-badge">第 {run.attemptCount + 1} 次推理</div></header><div className="reasoning-grid"><section className="option-panel"><h2><span>01</span>核心因素</h2>{caseConfig.reasoning.options.map((option) => <button key={option.id} className={optionId === option.id ? "selected" : ""} onClick={() => setOptionId(option.id)}><b>{option.id}</b><span>{option.label}</span>{optionId === option.id ? <CheckCircle2 /> : <i />}</button>)}</section><section className="chain-panel"><h2><span>02</span>关键证据链 <small>选择 2-3 份</small></h2><div className="evidence-pool">{eligible.map((item) => <button key={item.id} className={selected.includes(item.id) ? "selected" : ""} onClick={() => toggleEvidence(item.id)}><small>{item.type}</small><strong>{item.title}</strong><span>{item.relation}</span>{selected.includes(item.id) && <Check />}</button>)}</div><div className="chain-order"><small>影响排序 / 越靠上越关键</small>{selected.map((id, index) => { const item = eligible.find((e) => e.id === id)!; return <div key={id}><b>{index + 1}</b><span>{item.title}</span><button onClick={() => move(index, -1)} disabled={index === 0} aria-label="上移"><ChevronUp /></button><button onClick={() => move(index, 1)} disabled={index === selected.length - 1} aria-label="下移"><ChevronDown /></button></div>; })}{selected.length === 0 && <p>从上方证据中选择 2-3 份</p>}</div></section><section className="reason-panel"><h2><span>03</span>我的理由 <small>可选</small></h2><textarea value={reason} onChange={(e) => setReason(e.target.value)} maxLength={120} placeholder="用自己的话解释这条证据链..." /><small>{reason.length} / 120</small><div className="reasoning-boundary"><ShieldCheck /><p>硬规则只检查核心因素和已收集证据。你的理由只用于预制点评，不会被 AI 当作医学事实。</p></div></section></div>{submitting && <div className="ai-review"><BrainCircuit /><div><strong>看山正在核对证据链</strong><span>检查关键来源 · 查找相互印证 · 保留结论边界</span></div></div>}{feedback && <div className={`reason-feedback ${run.status === "CLOSED" ? "success" : "fail"}`}><img src={poseThink} alt="看山正在复核推理" /><div><small>看山点评 / PRESET REVIEW</small><p>{feedback}</p></div></div>}<footer className="reasoning-submit"><button className="text-button" onClick={() => navigate("/evidence")}><ArrowLeft /> 返回证据板</button>{run.attemptCount >= 3 && run.status !== "CLOSED" ? <button className="assist-button" onClick={assist}><Lightbulb /> 协助结案（评级最高 B）</button> : null}<button className="primary-button" disabled={!optionId || selected.length < 2 || submitting} onClick={submit}>{submitting ? "正在核对..." : "提交推理"}<ArrowRight /></button></footer></main></CaseShell>;
 }
 
 function ReportPage() {
@@ -430,7 +428,7 @@ function ReportPage() {
     await createRun();
     navigate("/brief");
   }
-  return <CaseShell pageLabel="结案报告" backTo="/"><main className="report-page"><article className="report-file"><div className="closed-stamp">案件已解决</div><header><div><small>{caseConfig.caseNumber} / FINAL REPORT</small><h1>{caseConfig.title}</h1><p>{caseConfig.question}</p></div><div className="grade"><span>案件评级</span><strong>{report.grade}</strong><small>{report.assisted ? "协助结案" : "独立结案"}</small></div></header><div className="report-metrics"><span><Clock3 /> 用时 <b>{minutes} 分钟</b></span><span><BrainCircuit /> 推理 <b>{report.attemptCount} 次</b></span><span><FolderOpen /> 证据 <b>{run.evidenceIds.length} 份</b></span><span><Puzzle /> 拼图 <b>{run.pieceIds.length} / 9</b></span></div><section className="final-conclusion"><small>本案结论 / REVIEWED CONCLUSION</small><h2>{report.selectedOption.label}</h2><p>{report.conclusion}</p><div><ShieldCheck />{report.limitation}</div></section><section className="report-chain"><h2>我的证据链</h2><div>{report.evidenceChain.map((item, index) => <article key={item.id}><b>{index + 1}</b><small>{item.type}</small><h3>{item.title}</h3><p>{item.excerpt}</p></article>)}</div></section><section className="source-list"><h2>事实来源</h2>{report.sources.map((source, index) => <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer"><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{source.title}</strong><small>{source.source}</small></div><ExternalLink /></a>)}{report.fallbackUsed && <div className="fallback-note"><Terminal /> 本次调查使用过演示搜索数据，正式演示前请检查 CLI 状态。</div>}</section><section className="kanshan-report"><div className="report-photo"><img src={kanshanPortrait} alt="看山" /><span>刘看山 / 主持调查</span></div><blockquote>“{report.comment}”</blockquote></section><footer><button className="primary-button" onClick={() => setShowShare(true)}><Clipboard /> 分享报告</button><button className="secondary-button" onClick={() => navigate("/")}><Map /> 返回事务所</button><button className="text-button" onClick={restart}><RotateCcw /> 重新调查</button></footer></article>{showShare && <div className="modal-backdrop" onClick={() => setShowShare(false)}><div className="share-modal" onClick={(e) => e.stopPropagation()}><button className="modal-close" onClick={() => setShowShare(false)}><X /></button><small>SHARE DRAFT / 本地草稿</small><h2>把证据和限制一起分享</h2><textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={300} /><div className="share-count">{draft.length} / 300</div><p><ShieldCheck /> 本 Demo 不接 OAuth，也不会代表你发布内容。</p><div><button className="primary-button" onClick={copyDraft}><Clipboard /> 复制草稿</button><a className="secondary-button" href="https://www.zhihu.com/" target="_blank" rel="noreferrer">打开知乎 <ExternalLink /></a></div></div></div>}</main></CaseShell>;
+  return <CaseShell pageLabel="结案报告" backTo="/"><main className="report-page"><article className="report-file"><div className="closed-stamp">案件已解决</div><header><div><small>{caseConfig.caseNumber} / FINAL REPORT</small><h1>{caseConfig.title}</h1><p>{caseConfig.question}</p></div><div className="grade"><span>案件评级</span><strong>{report.grade}</strong><small>{report.assisted ? "协助结案" : "独立结案"}</small></div></header><div className="report-metrics"><span><Clock3 /> 用时 <b>{minutes} 分钟</b></span><span><BrainCircuit /> 推理 <b>{report.attemptCount} 次</b></span><span><FolderOpen /> 证据 <b>{run.evidenceIds.length} 份</b></span><span><Puzzle /> 拼图 <b>{run.pieceIds.length} / 9</b></span></div><section className="final-conclusion"><small>本案结论 / REVIEWED CONCLUSION</small><h2>{report.selectedOption.label}</h2><p>{report.conclusion}</p><div><ShieldCheck />{report.limitation}</div></section><section className="report-chain"><h2>我的证据链</h2><div>{report.evidenceChain.map((item, index) => <article key={item.id}><b>{index + 1}</b><small>{item.type}</small><h3>{item.title}</h3><p>{item.excerpt}</p></article>)}</div></section><section className="source-list"><h2>事实来源</h2>{report.sources.map((source, index) => <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer"><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{source.title}</strong><small>{source.source}</small></div><ExternalLink /></a>)}{report.fallbackUsed && <div className="fallback-note"><Terminal /> 本次调查使用过演示搜索数据，正式演示前请检查 CLI 状态。</div>}</section><section className="kanshan-report"><div className="report-photo"><img src={poseClose} alt="看山完成结案" /><span>刘看山 / 主持调查</span></div><blockquote>“{report.comment}”</blockquote></section><footer><button className="primary-button" onClick={() => setShowShare(true)}><Clipboard /> 分享报告</button><button className="secondary-button" onClick={() => navigate("/")}><Map /> 返回事务所</button><button className="text-button" onClick={restart}><RotateCcw /> 重新调查</button></footer></article>{showShare && <div className="modal-backdrop" onClick={() => setShowShare(false)}><div className="share-modal" onClick={(e) => e.stopPropagation()}><button className="modal-close" onClick={() => setShowShare(false)}><X /></button><small>SHARE DRAFT / 本地草稿</small><h2>把证据和限制一起分享</h2><textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={300} /><div className="share-count">{draft.length} / 300</div><p><ShieldCheck /> 本 Demo 不接 OAuth，也不会代表你发布内容。</p><div><button className="primary-button" onClick={copyDraft}><Clipboard /> 复制草稿</button><a className="secondary-button" href="https://www.zhihu.com/" target="_blank" rel="noreferrer">打开知乎 <ExternalLink /></a></div></div></div>}</main></CaseShell>;
 }
 
 export function App() {

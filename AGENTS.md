@@ -54,3 +54,6 @@ This repo is a PC-only entry for the 看山 coding challenge.
 - Production build is served by FastAPI at port 8000 after `pnpm build`.
 - Browser QA passed at 1440x900 and 1366x768 with no horizontal overflow.
 - `public/assets/kanshan/kanshan-cutout.png` is a local chroma-key cutout derived from the supplied green-screen three-view asset; it is not a generated image.
+- The user-generated Image2 art is integrated into the playable flow: `kanshan-agency-hero.png` (home), `investigation-desk-bg.png` (desk), `case001-evidence-photo.png` (brief), and `case001-truth-puzzle.png` (3x3 puzzle).
+- `kanshan-detective-poses.png` is the original transparent four-pose sheet. Its runtime crops are `kanshan-pose-search.png`, `kanshan-pose-read.png`, `kanshan-pose-think.png`, and `kanshan-pose-close.png`; keep the source sheet and all four crops in git.
+- The generated-art integration was visually verified through home, brief, desk, search loading, unlocked puzzle, reasoning/report surfaces at both PC QA targets.
