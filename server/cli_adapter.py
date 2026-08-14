@@ -1,0 +1,60 @@
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+FALLBACK_PATH = ROOT / "data" / "seeds" / "demo_search_results.json"
+DEFAULT_CLI = Path.home() / "Library" / "Application Support" / "zhihu-cli" / "current" / "zhihu-cli"
+
+
+def _normalize_item(item: dict[str, Any], fallback: bool = False) -> dict[str, Any]:
+    content = str(item.get("ContentText") or item.get("summary") or "").replace("\n", " ").strip()
+    return {
+        "sourceId": str(item.get("ContentID") or item.get("sourceId") or "unknown"),
+        "title": str(item.get("Title") or item.get("title") or "未命名内容"),
+        "author": str(item.get("AuthorName") or item.get("author") or "知乎用户"),
+        "summary": content[:220],
+        "url": str(item.get("Url") or item.get("url") or "https://www.zhihu.com/"),
+        "type": str(item.get("ContentType") or item.get("type") or "Content"),
+        "fallback": fallback,
+    }
+
+
+def fallback_results() -> list[dict[str, Any]]:
+    raw = json.loads(FALLBACK_PATH.read_text(encoding="utf-8"))
+    return [_normalize_item(item, True) for item in raw["results"]]
+
+
+def search_zhihu(query: str, force_demo: bool = False) -> dict[str, Any]:
+    if force_demo:
+        return {"results": fallback_results(), "fallbackUsed": True, "source": "demo"}
+
+    cli_path = Path(os.getenv("ZHIHU_CLI_PATH", str(DEFAULT_CLI)))
+    if not cli_path.is_file():
+        return {"results": fallback_results(), "fallbackUsed": True, "source": "demo", "error": "CLI_NOT_FOUND"}
+
+    command = [str(cli_path), "search", "zhihu", "--query", query, "--count", "6", "--timeout", "10s"]
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=12, check=False)
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip() or "CLI_FAILED")
+        payload = json.loads(result.stdout)
+        if payload.get("Code") != 0:
+            raise RuntimeError(payload.get("Message") or "CLI_ERROR")
+        items = payload.get("Data", {}).get("Items", [])
+        normalized = [_normalize_item(item) for item in items if item.get("Title") and item.get("Url")]
+        if not normalized:
+            return {"results": [], "fallbackUsed": False, "source": "zhihu-cli"}
+        return {"results": normalized, "fallbackUsed": False, "source": "zhihu-cli"}
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, OSError, RuntimeError) as exc:
+        return {
+            "results": fallback_results(),
+            "fallbackUsed": True,
+            "source": "demo",
+            "error": exc.__class__.__name__,
+        }

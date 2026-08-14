@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.venv/
+__pycache__/
+*.pyc
+*.tsbuildinfo
+.DS_Store
+.env
+*.log
+data/*.db-shm
+data/*.db-wal
+vite.config.js
+vite.config.d.ts

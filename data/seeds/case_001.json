@@ -1,0 +1,88 @@
+{
+  "caseId": "case_001",
+  "version": 1,
+  "caseNumber": "CASE 001",
+  "title": "失踪的睡眠",
+  "question": "明明睡够了，为什么还是很累？",
+  "brief": "事务所收到多起“睡够仍疲惫”的报告。你的任务不是给出诊断，而是从真实内容与审核材料中，找出最值得优先调查的因素。",
+  "difficulty": "入门",
+  "duration": "5-8 分钟",
+  "disclaimer": "本案内容仅用于知识讨论，不构成医疗诊断、治疗或个体健康建议。持续疲惫请及时咨询专业人士。",
+  "recommendedQueries": ["睡够还是困", "睡眠质量", "昼夜节律"],
+  "tasks": [
+    {"id": "T01", "kind": "search", "title": "搜索终端", "subtitle": "找到第一份真实证词", "reward": "E01 + 拼图 P1"},
+    {"id": "T02", "kind": "dossier", "title": "知乎卷宗", "subtitle": "从审核摘录中选出重点", "reward": "E02 + 拼图 P2"},
+    {"id": "T03", "kind": "compare", "title": "专家证词", "subtitle": "比较互相冲突的解释", "reward": "E03 + 拼图 P3"},
+    {"id": "T04", "kind": "note", "title": "调查笔记", "subtitle": "记录你的个人经验", "reward": "E04 + 拼图 P4/P5", "optional": true},
+    {"id": "T05", "kind": "source", "title": "关键来源", "subtitle": "确认结论与限制", "reward": "E05 + 拼图 P6/P7"}
+  ],
+  "evidence": [
+    {"id": "E01", "title": "睡够不等于恢复", "type": "普通证词", "reliability": "contextual", "relation": "现象线索", "eligible": true, "supportsOptionIds": ["O2"], "excerpt": "来自你在知乎搜索中亲自标记的内容。", "source": "知乎搜索", "sourceUrl": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E5%A4%9F%E8%BF%98%E6%98%AF%E5%9B%B0"},
+    {"id": "E02", "title": "作息规律值得关注", "type": "专家证词", "reliability": "high", "relation": "支持", "eligible": true, "supportsOptionIds": ["O2"], "excerpt": "睡眠恢复感不只由时长决定，规律性与连续性同样值得观察。", "source": "审核卷宗 A", "sourceUrl": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E7%9C%A0%E8%B4%A8%E9%87%8F"},
+    {"id": "E03", "title": "时长与质量不是一回事", "type": "矛盾分析", "reliability": "medium", "relation": "相互印证", "eligible": true, "supportsOptionIds": ["O2"], "excerpt": "单一时长解释不了所有现象，恢复感需要结合质量与节律理解。", "source": "观点对照", "sourceUrl": "https://www.zhihu.com/search?type=content&q=%E6%98%BC%E5%A4%9C%E8%8A%82%E5%BE%8B"},
+    {"id": "E04", "title": "我的疲惫经历", "type": "个人证词", "reliability": "contextual", "relation": "个人经验", "eligible": false, "supportsOptionIds": [], "excerpt": "个人记录只用于个性化报告，不能单独证明普遍结论。", "source": "调查笔记", "sourceUrl": ""},
+    {"id": "E05", "title": "关键来源与限制", "type": "决定性证据", "reliability": "high", "relation": "关键", "eligible": true, "required": true, "supportsOptionIds": ["O2"], "excerpt": "在“睡够仍疲惫”的谜面下，作息规律、睡眠质量与节律是更值得优先调查的方向；但这不能替代个体诊断。", "source": "人工审核来源（演示）", "sourceUrl": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E7%9C%A0%E8%8A%82%E5%BE%8B"},
+    {"id": "E06", "title": "排除单一解释", "type": "补充证据", "reliability": "medium", "relation": "反驳", "eligible": true, "supportsOptionIds": ["O2"], "excerpt": "疲惫可能有多种成因，不能由一个未经验证的因素解释全部情况。", "source": "补充调查", "sourceUrl": ""}
+  ],
+  "dossiers": [
+    {
+      "id": "D01",
+      "title": "卷宗 A：睡眠时长之外",
+      "author": "内容审核组（演示）",
+      "body": "睡眠由多个阶段组成，恢复感与睡眠的连续性、规律性和个体差异有关。只记录“躺了多久”，无法完整描述睡眠质量。",
+      "excerpts": [
+        {"id": "X01", "text": "睡眠时长与恢复感不是同一个指标。"},
+        {"id": "X02", "text": "规律性与连续性需要和时长一起观察。"},
+        {"id": "X03", "text": "个人感受可以提供线索，但不能代替专业判断。"}
+      ]
+    },
+    {
+      "id": "D02",
+      "title": "卷宗 B：节律线索",
+      "author": "内容审核组（演示）",
+      "body": "睡眠时间点与昼夜节律不一致时，即使总时长看起来充足，也可能出现白天困倦。此处只用于说明调查方向，不给出个体诊断。",
+      "excerpts": [
+        {"id": "X04", "text": "睡眠发生在什么时候，同样是重要线索。"},
+        {"id": "X05", "text": "白天困倦不能仅由“是否睡满八小时”判断。"},
+        {"id": "X06", "text": "持续异常需要进一步专业评估。"}
+      ]
+    }
+  ],
+  "comparison": {
+    "viewpoints": [
+      {"id": "A", "label": "观点 A", "text": "只要睡眠时长够，疲惫主要是主观感受。", "source": "演示观点"},
+      {"id": "B", "label": "观点 B", "text": "恢复感还受作息规律、睡眠质量和节律影响。", "source": "审核卷宗"}
+    ],
+    "reasonTags": ["解释了更多现象", "与其他证据印证", "保留了结论边界"]
+  },
+  "keySource": {
+    "title": "关键来源：恢复感的多因素线索",
+    "source": "人工审核材料（演示）",
+    "publishedAt": "2026-08-14",
+    "excerpt": "对“睡够仍疲惫”的讨论，应优先区分睡眠时长、质量、规律性与昼夜节律；任何单一线索都不能直接构成个体诊断。",
+    "supports": "作息规律、睡眠质量和节律值得优先调查。",
+    "limitation": "不能证明所有疲惫都由睡眠导致，也不能替代医学评估。"
+  },
+  "puzzle": ["时长", "规律", "节律", "质量", "连续", "来源", "限制", "印证", "真相"],
+  "reasoning": {
+    "question": "哪一个方向最值得优先调查？",
+    "options": [
+      {"id": "O1", "label": "睡眠时长不足"},
+      {"id": "O2", "label": "作息规律、睡眠质量与昼夜节律"},
+      {"id": "O3", "label": "某一种饮食因素解释全部情况"},
+      {"id": "O4", "label": "疲惫完全是主观错觉"}
+    ]
+  },
+  "copy": {
+    "home": "有人明明睡够了，精神却不见了。先别急着猜，真正的侦探会先看证据。",
+    "brief": "这不是一道医学诊断题。你要做的是追踪来源、比较解释，再留下一个带边界的结论。",
+    "ready": "证据已经够你提出一个版本的真相。准备好，就上推理板。"
+  },
+  "report": {
+    "conclusion": "“睡够”只描述了时长。对于仍然疲惫的现象，更值得优先调查的是作息规律、睡眠质量与昼夜节律，并结合个人情况继续求证。",
+    "limitation": "本案不能证明所有疲惫均由睡眠导致，也不构成医疗诊断或建议。持续或严重不适应咨询专业人士。",
+    "successComment": "你没有让结论跑在证据前面。更难得的是，你把关键来源和它不能证明的部分一起留在了报告里。",
+    "assistedComment": "看山帮你补齐了最后一段证据链。方向已经清楚，但下一次，试着先让关键来源和支持证词相互印证。",
+    "shareTemplate": "我在 #看山侦探事务所 完成了 CASE 001《失踪的睡眠》，获得 {grade} 级评价。比答案更重要的是：结论要能回到来源，也要带着它的限制。\n\n本内容仅用于知识讨论，不构成医疗建议。"
+  }
+}

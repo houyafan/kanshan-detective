@@ -1,0 +1,28 @@
+{
+  "results": [
+    {
+      "sourceId": "demo_001",
+      "title": "为什么睡够八小时还是觉得累？",
+      "author": "知乎内容演示",
+      "summary": "睡眠时长并不完全等同于恢复质量，规律性、连续性和日间状态都是值得记录的线索。",
+      "url": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E5%A4%9F%E8%BF%98%E6%98%AF%E5%9B%B0",
+      "type": "Answer"
+    },
+    {
+      "sourceId": "demo_002",
+      "title": "睡眠质量应该观察哪些信号？",
+      "author": "知乎内容演示",
+      "summary": "除了总时长，还可以观察醒后恢复感、夜间中断、作息稳定程度，以及这些情况是否持续。",
+      "url": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E7%9C%A0%E8%B4%A8%E9%87%8F",
+      "type": "Article"
+    },
+    {
+      "sourceId": "demo_003",
+      "title": "昼夜节律和白天困倦有什么关系？",
+      "author": "知乎内容演示",
+      "summary": "睡眠发生的时间与日常节律也是调查方向，但任何摘要都不能直接用于个体诊断。",
+      "url": "https://www.zhihu.com/search?type=content&q=%E6%98%BC%E5%A4%9C%E8%8A%82%E5%BE%8B",
+      "type": "Answer"
+    }
+  ]
+}

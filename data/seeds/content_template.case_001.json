@@ -1,0 +1,47 @@
+{
+  "instructions": "由内容负责人填写。required=true 的来源在正式 Demo 前必须通过人工审核；不要写入 Access Secret 或个人隐私。",
+  "caseId": "case_001",
+  "reviewStatus": "draft",
+  "reviewer": "",
+  "reviewedAt": "",
+  "finalConclusion": "",
+  "globalLimitations": [],
+  "sources": [
+    {
+      "evidenceId": "E01",
+      "sourceId": "",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "publishedAt": "",
+      "excerpt": "",
+      "context": "",
+      "supportsOptionIds": [],
+      "refutesOptionIds": [],
+      "limitations": [],
+      "reliability": "contextual",
+      "required": false,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    },
+    {
+      "evidenceId": "E05",
+      "sourceId": "",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "publishedAt": "",
+      "excerpt": "",
+      "context": "",
+      "supportsOptionIds": ["O2"],
+      "refutesOptionIds": [],
+      "limitations": [],
+      "reliability": "high",
+      "required": true,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    }
+  ]
+}
