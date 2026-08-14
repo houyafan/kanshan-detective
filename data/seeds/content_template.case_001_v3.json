@@ -1,0 +1,103 @@
+{
+  "instructions": "由内容负责人填写并人工审核。不要写入 Access Secret、个人隐私或无法回溯的医学结论。每条 required=true 的来源在正式演示前必须 approved=true。",
+  "caseId": "case_001",
+  "caseVersion": 3,
+  "reviewStatus": "draft",
+  "reviewer": "",
+  "reviewedAt": "",
+  "globalDisclaimer": "本案内容仅用于知识讨论，不构成医学诊断、治疗或个体健康建议。",
+  "sources": [
+    {
+      "roundId": "R2",
+      "sourceId": "S_DOCTOR",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "professionalIdentity": "",
+      "identityVerifiedBy": "",
+      "publishedAt": "",
+      "approvedExcerpts": [],
+      "supportsSuspectIds": ["COLD"],
+      "weakensSuspectIds": [],
+      "limitations": [],
+      "required": true,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    },
+    {
+      "roundId": "R3",
+      "sourceId": "S_COMMENTS",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "approvedExcerpts": [],
+      "approvedComments": [
+        {"relation": "support", "text": ""},
+        {"relation": "challenge", "text": ""}
+      ],
+      "supportsSuspectIds": ["NOISE"],
+      "weakensSuspectIds": [],
+      "limitations": [],
+      "required": true,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    },
+    {
+      "roundId": "R4",
+      "sourceId": "S_RESEARCH",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "studySample": "",
+      "publishedAt": "",
+      "approvedExcerpts": [],
+      "supportsSuspectIds": ["PRESSURE"],
+      "weakensSuspectIds": [],
+      "limitations": [],
+      "required": true,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    },
+    {
+      "roundId": "R6",
+      "sourceId": "S_COMPARE_A",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "approvedExcerpts": [],
+      "supportsSuspectIds": ["BLUE"],
+      "weakensSuspectIds": [],
+      "limitations": [],
+      "required": true,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    },
+    {
+      "roundId": "R6",
+      "sourceId": "S_COMPARE_B",
+      "sourceUrl": "",
+      "title": "",
+      "authorOrOrg": "",
+      "approvedExcerpts": [],
+      "supportsSuspectIds": ["PRESSURE", "COLD", "NOISE"],
+      "weakensSuspectIds": ["BLUE"],
+      "limitations": [],
+      "required": true,
+      "approved": false,
+      "reviewer": "",
+      "reviewedAt": ""
+    }
+  ],
+  "finalReview": {
+    "timelineChecked": false,
+    "medicalBoundariesChecked": false,
+    "sourceLinksReachable": false,
+    "evidenceRelationsChecked": false,
+    "truthReconstructionApproved": false,
+    "notes": ""
+  }
+}

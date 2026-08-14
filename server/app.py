@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 
 from .cli_adapter import cli_runtime_status, search_zhihu
 from .db import DB_PATH, connect, get_case, get_run, init_db, log_event, now_iso, save_run
+from .v3 import router as v3_router
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -393,6 +394,9 @@ def get_report(run_id: str) -> dict[str, Any]:
 def event(body: EventRequest) -> dict[str, bool]:
     log_event(body.eventName, body.runId, body.payload)
     return {"ok": True}
+
+
+app.include_router(v3_router)
 
 
 DIST_DIR = ROOT / "dist"

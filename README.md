@@ -1,15 +1,15 @@
 # 看山侦探事务所
 
-看山 coding challenge 的 PC-only 精品 MVP。用户围绕 CASE 001《失踪的睡眠》完成知乎搜索、卷宗阅读、观点对照、证据整理、推理与结案报告，也可以从首页自行提问并用知乎 CLI 快查线索。
+看山 coding challenge 的精品 MVP。V3 围绕 CASE 001《失踪的45分钟》，提供初始判断、七轮调查、逐轮投票、AI 前情提示、案件板、最终指认和结案报告；桌面端与手机竖屏功能一致。
 
 ## 技术栈
 
 - React + Vite + TypeScript
 - Python + FastAPI
 - SQLite
-- zhihu-cli 0.3.0，MVP 只调用 `search zhihu`
+- zhihu-cli 0.3.0
 
-不接 OAuth，不接真实 AI。看山对白与推理点评均为预制内容；调查笔记可默认复制正文并打开知乎想法页面，但最终发布必须由用户在知乎确认。
+不接 OAuth，不做真实发布。R1/R7 调用 `zhihu-cli search zhihu`，R5 双轮协查和逐轮 recap 调用 `zhihu-cli answer`；CLI 不可用、超时或输出越界时切换到明确标注的审核模板，不阻断主线。案件事实、证据资格、评分与医学边界始终由服务端控制。
 
 ## 本地启动
 
@@ -31,7 +31,7 @@ python3 -m venv .venv
 pnpm dev
 ```
 
-打开 <http://127.0.0.1:5173>。
+打开 <http://127.0.0.1:5173>。Vite 会把 `/api` 代理到 FastAPI。
 
 ## 生产方式
 
@@ -113,13 +113,22 @@ Sealos 首次创建应用时按下列参数与 Action 对齐：
 export ZHIHU_ACCESS_SECRET=your_secret
 ```
 
-凭证不要提交到 git。CLI 不可用或超时时，搜索页会返回明确标注的演示数据，主线仍可结案。
+凭证不要提交到 git。可用以下命令分别验证两项能力：
+
+```bash
+zhihu-cli search zhihu "睡前玩手机 睡眠"
+zhihu-cli answer "睡前手机与睡眠有什么关系？" --model zhida-fast-1p5
+```
+
+CLI 不可用或超时时，搜索和直答都会返回明确标注的演示内容，主线仍可结案。
 
 ## 内容与静态文件
 
 - `data/seeds/case_001.json`：当前 CASE 001 演示配置
+- `data/seeds/case_001_v3.json`：V3 七轮案件、审核快照、证据与真相配置
 - `data/seeds/demo_search_results.json`：CLI 降级数据
 - `data/seeds/content_template.case_001.json`：人工审核填充模板
+- `data/seeds/content_template.case_001_v3.json`：V3 来源与医学边界审核模板
 - `data/kanshan.db`：可提交的初始 SQLite 数据库
 - `public/assets/kanshan/`：项目使用的看山三视图素材
 
@@ -127,8 +136,9 @@ export ZHIHU_ACCESS_SECRET=your_secret
 
 ## 验收口径
 
-- 只适配 PC，主验收 1440×900，兼容 1366×768。
-- 游客从首页到结案报告全程无需登录。
-- 只猜正确选项不能通关，证据链必须包含 E05 和至少一条支持证据。
-- 刷新后从 SQLite 恢复进度，任务奖励保持幂等。
-- CLI 与预制 AI 表现不可用时不阻断主线。
+- 桌面主验收 1440×900，兼容 1366×768；手机竖屏主验收 390×844，兼容 375×812。
+- 游客从首页到结案报告全程无需登录，移动端不删减搜索、协查、投票、案件板或结案能力。
+- R0 初始投票与 R1-R7 每轮投票均持久化，已提交轮次不可覆盖。
+- R5 必须完成两轮协查；最终指认必须包含两张有效证据和一张误导线索，AI 不能成为唯一证据组合。
+- 刷新或从知乎原文返回后可从 SQLite 与本地 runId 恢复稳定进度。
+- 搜索、直答不可用时自动降级且不阻断主线；页面明确标注演示搜索或模板协查。

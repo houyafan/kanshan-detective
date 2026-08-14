@@ -1,16 +1,9 @@
-import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { App } from "./App";
-import { AppProvider } from "./state";
-import "./styles.css";
+import { V3App } from "./v3/App";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AppProvider>
-        <App />
-      </AppProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <V3App />
+  </BrowserRouter>
 );

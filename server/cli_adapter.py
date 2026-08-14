@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -10,6 +11,26 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 FALLBACK_PATH = ROOT / "data" / "seeds" / "demo_search_results.json"
 DEFAULT_CLI = Path.home() / "Library" / "Application Support" / "zhihu-cli" / "current" / "zhihu-cli"
+
+
+def _answer_is_safe(answer: str, query: str) -> bool:
+    forbidden = (
+        "真凶就是",
+        "已经确诊",
+        "可以确诊",
+        "建议服用",
+        "治疗方案",
+        "处方",
+        "剂量",
+    )
+    if not answer or len(answer) > 900 or any(term in answer for term in forbidden):
+        return False
+
+    # Direct Answer may reframe reviewed facts, but it must not invent a new
+    # time, duration, evidence number, or other numeric case detail.
+    allowed_numbers = set(re.findall(r"\d+(?::\d+)?", query))
+    answer_numbers = set(re.findall(r"\d+(?::\d+)?", answer))
+    return answer_numbers.issubset(allowed_numbers)
 
 
 def configured_cli_path() -> Path:
@@ -70,5 +91,52 @@ def search_zhihu(query: str, force_demo: bool = False) -> dict[str, Any]:
             "results": fallback_results(),
             "fallbackUsed": True,
             "source": "demo",
+            "error": exc.__class__.__name__,
+        }
+
+
+def answer_zhihu(query: str, fallback_text: str, timeout_seconds: int = 8) -> dict[str, Any]:
+    cli_path = configured_cli_path()
+    if not cli_path.is_file() or not os.access(cli_path, os.X_OK):
+        return {"answer": fallback_text, "fallbackUsed": True, "source": "template", "error": "CLI_NOT_FOUND"}
+
+    command = [
+        str(cli_path),
+        "answer",
+        "--query",
+        query,
+        "--model",
+        "zhida-fast-1p5",
+        "--output",
+        "json",
+        "--timeout",
+        f"{timeout_seconds}s",
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds + 1,
+            check=False,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr.strip() or "CLI_FAILED")
+        payload = json.loads(result.stdout)
+        answer = str(payload["choices"][0]["message"]["content"]).strip()
+        if not _answer_is_safe(answer, query):
+            raise RuntimeError("ANSWER_REJECTED")
+        return {
+            "answer": answer[:900],
+            "fallbackUsed": False,
+            "source": "zhihu-answer",
+            "model": str(payload.get("model") or "zhida-fast-1p5"),
+        }
+    except (subprocess.TimeoutExpired, json.JSONDecodeError, KeyError, IndexError, OSError, RuntimeError) as exc:
+        return {
+            "answer": fallback_text,
+            "fallbackUsed": True,
+            "source": "template",
+            "model": "template",
             "error": exc.__class__.__name__,
         }

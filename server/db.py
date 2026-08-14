@@ -14,6 +14,7 @@ BUNDLED_DATA_DIR = ROOT / "data"
 DATA_DIR = Path(os.getenv("KANSHAN_DATA_DIR", str(BUNDLED_DATA_DIR))).expanduser()
 DB_PATH = DATA_DIR / "kanshan.db"
 SEED_PATH = BUNDLED_DATA_DIR / "seeds" / "case_001.json"
+V3_SEED_PATH = BUNDLED_DATA_DIR / "seeds" / "case_001_v3.json"
 
 
 def now_iso() -> str:
@@ -27,8 +28,9 @@ def connect() -> sqlite3.Connection:
         shutil.copy2(bundled_db, DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=DELETE")
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    conn.execute("PRAGMA busy_timeout=5000")
     return conn
 
 
@@ -78,6 +80,42 @@ def init_db() -> None:
                 report_json TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS v3_votes (
+                vote_id TEXT PRIMARY KEY,
+                run_id TEXT NOT NULL,
+                round_id TEXT NOT NULL,
+                suspect_id TEXT NOT NULL,
+                role TEXT,
+                confidence TEXT,
+                reason_evidence_id TEXT,
+                created_at TEXT NOT NULL,
+                UNIQUE(run_id, round_id)
+            );
+            CREATE TABLE IF NOT EXISTS v3_assistant_turns (
+                turn_id TEXT PRIMARY KEY,
+                run_id TEXT NOT NULL,
+                round_id TEXT NOT NULL,
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                fallback INTEGER NOT NULL DEFAULT 0,
+                model TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE TABLE IF NOT EXISTS v3_recaps (
+                recap_id TEXT PRIMARY KEY,
+                run_id TEXT NOT NULL,
+                round_id TEXT NOT NULL,
+                vote_id TEXT NOT NULL,
+                recap_json TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                UNIQUE(run_id, round_id)
+            );
+            CREATE TABLE IF NOT EXISTS v3_final_decisions (
+                decision_id TEXT PRIMARY KEY,
+                run_id TEXT UNIQUE NOT NULL,
+                decision_json TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
             """
         )
         seed = json.loads(SEED_PATH.read_text(encoding="utf-8"))
@@ -91,6 +129,24 @@ def init_db() -> None:
                 config_json=excluded.config_json
             """,
             (seed["caseId"], seed["title"], seed["version"], json.dumps(seed, ensure_ascii=False), now_iso()),
+        )
+        v3_seed = json.loads(V3_SEED_PATH.read_text(encoding="utf-8"))
+        conn.execute(
+            """
+            INSERT INTO case_configs(case_id, title, version, config_json, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(case_id) DO UPDATE SET
+                title=excluded.title,
+                version=excluded.version,
+                config_json=excluded.config_json
+            """,
+            (
+                v3_seed["caseId"],
+                v3_seed["title"],
+                v3_seed["version"],
+                json.dumps(v3_seed, ensure_ascii=False),
+                now_iso(),
+            ),
         )
 
 
@@ -113,7 +169,9 @@ def get_run(run_id: str) -> dict[str, Any] | None:
     state["createdAt"] = row["created_at"]
     state["updatedAt"] = row["updated_at"]
     if (
-        state.get("status") == "CLOSED"
+        state.get("caseVersion", 2) < 3
+        and state.get("taskStates")
+        and state.get("status") == "CLOSED"
         and state.get("report", {}).get("grade") == "S"
         and all(status == "COMPLETED" for status in state.get("taskStates", {}).values())
     ):
