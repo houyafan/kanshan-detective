@@ -13,6 +13,12 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   case: () => request<CaseConfig>("/api/case/current"),
+  commissionSearch: (query: string) =>
+    request<{ results: SearchResult[]; fallbackUsed: boolean; source: string }>("/api/commissions/search", {
+      method: "POST",
+      headers: jsonHeaders,
+      body: JSON.stringify({ query, mode: "auto" })
+    }),
   createRun: () => request<RunState>("/api/runs", { method: "POST" }),
   getRun: (runId: string) => request<RunState>(`/api/runs/${runId}`),
   patchRun: (runId: string, body: Record<string, unknown>) =>

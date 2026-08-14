@@ -112,6 +112,12 @@ def get_run(run_id: str) -> dict[str, Any] | None:
     state["fallbackUsed"] = bool(row["fallback_used"])
     state["createdAt"] = row["created_at"]
     state["updatedAt"] = row["updated_at"]
+    if (
+        state.get("status") == "CLOSED"
+        and state.get("report", {}).get("grade") == "S"
+        and all(status == "COMPLETED" for status in state.get("taskStates", {}).values())
+    ):
+        state["pieceIds"] = [f"P{index}" for index in range(1, 10)]
     return state
 
 

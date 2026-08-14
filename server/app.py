@@ -108,14 +108,21 @@ def evidence_detail(case: dict[str, Any], state: dict[str, Any], evidence_id: st
 def build_report(state: dict[str, Any], selected_option_id: str, evidence_ids: list[str], assisted: bool) -> dict[str, Any]:
     case = get_case(state["caseId"])
     attempt_count = state["attemptCount"]
-    grade = "B" if assisted or attempt_count >= 3 else ("S" if attempt_count == 1 and len(state["evidenceIds"]) >= 4 else "A")
+    completed_all_tasks = all(status == "COMPLETED" for status in state["taskStates"].values())
+    grade = "B" if assisted or attempt_count >= 3 else ("S" if attempt_count == 1 and completed_all_tasks else "A")
+    add_unique(state["pieceIds"], ["P8", "P9"])
     option = next(item for item in case["reasoning"]["options"] if item["id"] == selected_option_id)
     evidence_chain = [evidence_detail(case, state, evidence_id) for evidence_id in evidence_ids]
     sources = []
     for evidence_id in state["evidenceIds"]:
         item = evidence_detail(case, state, evidence_id)
-        if item.get("sourceUrl"):
-            sources.append({"title": item["title"], "url": item["sourceUrl"], "source": item.get("source", "演示内容")})
+        sources.append(
+            {
+                "title": item["title"],
+                "url": item.get("sourceUrl") if evidence_id == "E01" else None,
+                "source": item.get("source", "演示内容"),
+            }
+        )
     duration_seconds = max(60, int((datetime.now(timezone.utc) - datetime.fromisoformat(state["startedAt"])).total_seconds()))
     report = {
         "reportId": f"report_{uuid.uuid4().hex[:10]}",
@@ -145,7 +152,6 @@ def build_report(state: dict[str, Any], selected_option_id: str, evidence_ids: l
     state["status"] = "CLOSED"
     state["lastPage"] = "P07"
     state["report"] = report
-    add_unique(state["pieceIds"], ["P9"])
     return report
 
 
@@ -158,6 +164,20 @@ def health() -> dict[str, Any]:
 @app.get("/api/case/current")
 def current_case() -> dict[str, Any]:
     return get_case()
+
+
+@app.post("/api/commissions/search")
+def search_custom_commission(body: SearchRequest) -> dict[str, Any]:
+    result = search_zhihu(body.query.strip(), force_demo=body.mode == "demo")
+    log_event(
+        "custom_commission_search",
+        payload={
+            "queryLength": len(body.query.strip()),
+            "resultCount": len(result["results"]),
+            "fallbackUsed": result["fallbackUsed"],
+        },
+    )
+    return result
 
 
 @app.post("/api/runs")
@@ -270,7 +290,11 @@ def complete_task(run_id: str, task_id: str, body: TaskCompleteRequest) -> dict[
         if not 10 <= len(note) <= 120:
             raise HTTPException(status_code=422, detail="NOTE_LENGTH")
         state["noteDraft"] = note
-        state["evidenceDetails"]["E04"] = {"excerpt": note[:80]}
+        publish_to_pin = bool(payload.get("publishToPin", True))
+        state["evidenceDetails"]["E04"] = {
+            "excerpt": note[:80],
+            "source": "个人调查笔记 · 已准备知乎想法" if publish_to_pin else "个人调查笔记",
+        }
     elif task_id == "T05" and not (payload.get("supportChecked") and payload.get("limitationChecked")):
         raise HTTPException(status_code=422, detail="SOURCE_CONFIRMATION_REQUIRED")
 

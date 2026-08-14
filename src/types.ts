@@ -85,7 +85,7 @@ export interface Report {
   conclusion: string;
   limitation: string;
   comment: string;
-  sources: Array<{ title: string; url: string; source: string }>;
+  sources: Array<{ title: string; url?: string; source: string }>;
   fallbackUsed: boolean;
   shareDraft: string;
 }
@@ -103,6 +103,7 @@ export interface RunState {
   attemptCount: number;
   draftReasoning: Record<string, unknown> | null;
   noteDraft: string;
+  taskPayloads?: Record<string, Record<string, unknown>>;
   fallbackUsed: boolean;
   startedAt?: string;
   report?: Report;

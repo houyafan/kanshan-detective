@@ -17,9 +17,11 @@ import {
   LockKeyhole,
   Map,
   NotebookPen,
+  Plus,
   Puzzle,
   RotateCcw,
   Search,
+  Send,
   ShieldCheck,
   Sparkles,
   Stamp,
@@ -80,9 +82,19 @@ function CaseShell({ children, pageLabel, backTo = "/desk" }: { children: ReactN
 }
 
 function HomePage() {
-  const { caseConfig, run, createRun, loading, error } = useApp();
+  const { caseConfig, run, createRun, loading, error, setToast } = useApp();
   const navigate = useNavigate();
   const [working, setWorking] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customQuestion, setCustomQuestion] = useState("");
+  const [customResults, setCustomResults] = useState<SearchResult[]>([]);
+  const [customSource, setCustomSource] = useState("");
+  const [customSearching, setCustomSearching] = useState(false);
+  const [customCategories, setCustomCategories] = useState(["生活之谜"]);
+  const [customDifficulty, setCustomDifficulty] = useState("入门");
+  const [customDuration, setCustomDuration] = useState("5-8 分钟");
+  const [customOptions, setCustomOptions] = useState(["案件背景", "嫌疑人设定", "调查路径", "证据与干扰项", "结论与解析"]);
+  const [customSyncQuestion, setCustomSyncQuestion] = useState(true);
 
   if (loading) return <LoadingScreen />;
   if (!caseConfig || error) return <div className="fatal-state"><X size={34} /><h1>档案调取失败</h1><p>{error}</p></div>;
@@ -95,6 +107,54 @@ function HomePage() {
     } finally {
       setWorking(false);
     }
+  }
+
+  async function inspectCustomCommission(event: FormEvent) {
+    event.preventDefault();
+    const question = customQuestion.trim().replace(/\s+/g, " ");
+    if (question.length < 2) return;
+    setCustomSearching(true);
+    setCustomResults([]);
+    try {
+      const data = await api.commissionSearch(question);
+      setCustomResults(data.results.slice(0, 3));
+      setCustomSource(data.source === "zhihu-cli" ? "知乎 CLI 实时线索" : "演示线索");
+      if (customSyncQuestion) {
+        void navigator.clipboard?.writeText(question).catch(() => undefined);
+        window.open("https://www.zhihu.com/", "_blank", "noopener,noreferrer");
+        setToast("问题已复制，已打开知乎，请确认后续操作");
+      }
+      if (!data.results.length) setToast("暂时没有找到线索，换一种问法试试");
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : "委托预检失败");
+    } finally {
+      setCustomSearching(false);
+    }
+  }
+
+  function closeCustomCommission() {
+    setCustomOpen(false);
+    setCustomResults([]);
+    setCustomSource("");
+  }
+
+  function resetCustomCommission() {
+    setCustomQuestion("");
+    setCustomResults([]);
+    setCustomSource("");
+    setCustomCategories(["生活之谜"]);
+    setCustomDifficulty("入门");
+    setCustomDuration("5-8 分钟");
+    setCustomOptions(["案件背景", "嫌疑人设定", "调查路径", "证据与干扰项", "结论与解析"]);
+    setCustomSyncQuestion(true);
+  }
+
+  function toggleCustomCategory(category: string) {
+    setCustomCategories((current) => current.includes(category) ? current.filter((item) => item !== category) : [...current, category]);
+  }
+
+  function toggleCustomOption(option: string) {
+    setCustomOptions((current) => current.includes(option) ? current.filter((item) => item !== option) : [...current, option]);
   }
 
   const hasProgress = run && !["BRIEF", "CLOSED"].includes(run.status);
@@ -114,6 +174,12 @@ function HomePage() {
           <h1>真相不会<br />自己浮上来。</h1>
           <p className="kanshan-line">“{caseConfig.copy.home}”</p>
           <div className="home-meta"><span><Clock3 /> {caseConfig.duration}</span><span><ShieldCheck /> 无需登录</span><span><Terminal /> 真实知乎搜索</span></div>
+          <button className="custom-commission-entry" onClick={() => setCustomOpen(true)}>
+            <Plus />
+            <span><strong>自行发起委托</strong><small>用知乎 CLI 预检你的问题</small></span>
+            <i>NEW</i>
+            <ArrowRight />
+          </button>
         </div>
         <div className="hero-image-focus" aria-label="看山侦探事务所场景" />
         <article className="today-case">
@@ -145,6 +211,40 @@ function HomePage() {
         ))}
         <div className="method-note"><b>调查方法</b><span>搜索 → 阅读 → 比较 → 推理</span><small>所有正式结论必须回到来源</small></div>
       </section>
+      {customOpen && (
+        <div className="custom-commission-backdrop" onClick={closeCustomCommission}>
+          <section className="custom-commission-screen" onClick={(event) => event.stopPropagation()}>
+            <header className="custom-commission-nav">
+              <button className="custom-back-button" onClick={closeCustomCommission} aria-label="返回事务所" title="返回事务所"><ArrowLeft /></button>
+              <div className="custom-nav-title"><span>新功能</span><strong>自行发起委托</strong><i>| 创建案件</i></div>
+              <div className="custom-nav-progress"><span><FolderOpen /> 0 份证据</span><span><Puzzle /> 0 / 9</span><b><Check /> 已保存</b></div>
+            </header>
+            <main className="custom-commission-body">
+              <section className="commission-form-paper">
+                <div className="paper-inner">
+                  <div className="commission-paper-heading"><div><small>CREATE YOUR CASE</small><h1>自行发起委托</h1></div><span>创建新案件</span></div>
+                  <p className="commission-lead">有问题？让看山帮你生成一宗新案件！</p>
+                  <form onSubmit={inspectCustomCommission}>
+                    <label className="commission-field-label" htmlFor="custom-question">输入你想调查的问题或关键词...</label>
+                    <div className="commission-question-box"><textarea id="custom-question" autoFocus value={customQuestion} onChange={(event) => setCustomQuestion(event.target.value)} maxLength={50} placeholder="例：为什么熬夜后第二天很难集中注意力？" /><span>{customQuestion.length}/50</span></div>
+
+                    <fieldset className="commission-option-group"><legend>选择案件类型 <small>（可多选）</small></legend><div className="commission-choice-row">{["生活之谜", "社会现象", "科学探索", "历史人文", "其他"].map((category) => <button type="button" key={category} className={customCategories.includes(category) ? "selected" : ""} onClick={() => toggleCustomCategory(category)}>{customCategories.includes(category) && <CheckCircle2 />}{category}</button>)}</div></fieldset>
+                    <div className="commission-split-options"><fieldset className="commission-option-group"><legend>案件难度</legend><div className="commission-choice-row difficulty-row">{[["入门", "★☆☆☆☆"], ["进阶", "★★☆☆☆"], ["专家", "★★★☆☆"]].map(([label, stars]) => <button type="button" key={label} className={customDifficulty === label ? "selected" : ""} onClick={() => setCustomDifficulty(label)}><strong>{label}</strong><small>{stars}</small></button>)}</div></fieldset><fieldset className="commission-option-group"><legend>预计用时</legend><div className="commission-choice-row duration-row">{["5-8 分钟", "8-15 分钟", "15 分钟以上"].map((duration) => <button type="button" key={duration} className={customDuration === duration ? "selected" : ""} onClick={() => setCustomDuration(duration)}><Clock3 />{duration}</button>)}</div></fieldset></div>
+
+                    <fieldset className="commission-option-group defaults-group"><legend>默认勾选项 <small>（你也可以根据需要取消或调整）</small></legend><div className="commission-defaults">{["案件背景", "嫌疑人设定", "调查路径", "证据与干扰项", "结论与解析"].map((option) => <label key={option} className={customOptions.includes(option) ? "checked" : ""}><input type="checkbox" checked={customOptions.includes(option)} onChange={() => toggleCustomOption(option)} /><span><Check /></span>{`生成${option}`}</label>)}</div></fieldset>
+
+                    <label className={`commission-sync-card ${customSyncQuestion ? "checked" : ""}`}><Lightbulb /><input type="checkbox" checked={customSyncQuestion} onChange={(event) => setCustomSyncQuestion(event.target.checked)} /><span className="commission-sync-copy"><strong>一键同步到知乎问题</strong><small>生成的案件将自动同步到知乎，形成问题草稿，方便进一步编辑和发布。</small></span><span className="commission-toggle"><i /></span></label>
+                    <div className="commission-form-actions"><button type="button" className="secondary-button" onClick={resetCustomCommission}>清空重置</button><button type="submit" className="commission-generate-button" disabled={customSearching || customQuestion.trim().length < 2}>{customSearching ? "正在生成案件..." : "生成我的案件"}<ArrowRight /></button></div>
+                  </form>
+                  {customSearching && <div className="commission-loading"><img src={poseSearch} alt="看山正在搜索知乎" /><div><strong>看山正在核对知乎线索</strong><span>搜索标题、摘要与原文链接...</span></div></div>}
+                  {customResults.length > 0 && <div className="commission-results"><div className="commission-results-head"><span>{customSource} · {customDifficulty} · {customDuration}</span><small>初步案情只呈现来源，不自动生成事实结论</small></div>{customResults.map((result, index) => <article key={result.sourceId}><b>{String(index + 1).padStart(2, "0")}</b><div><small>{result.type} · {result.author}</small><h3>{result.title}</h3><p>{result.summary}</p></div><a href={result.url} target="_blank" rel="noreferrer" title="查看知乎原文"><ExternalLink /></a></article>)}</div>}
+                </div>
+              </section>
+              <aside className="commission-side-panel"><div className="commission-polaroid"><div><img src={poseRead} alt="看山正在阅读案件资料" /></div><span>每一个好问题，都是一宗好案件。</span></div><img className="commission-side-agent" src={poseThink} alt="看山正在思考案件" /><div className="commission-side-quote">“输入你想知道的问题，<br />我来帮你把它变成一宗值得调查的案件。”</div><footer><ShieldCheck /><span>AI 负责案件包装，事实仍回到知乎来源。</span></footer></aside>
+            </main>
+          </section>
+        </div>
+      )}
     </main>
   );
 }
@@ -268,10 +368,12 @@ function TaskPage() {
     try {
       const updated = await completeTask(task!.id, payload);
       updateRun(updated);
-      setToast(`已获得 ${task!.reward}`);
+      setToast(task!.id === "T04" && payload.publishToPin ? "笔记已归档，已打开知乎想法，请确认发布" : `已获得 ${task!.reward}`);
       navigate("/desk");
+      return true;
     } catch (err) {
       setToast(err instanceof Error ? err.message : "提交失败");
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -347,15 +449,48 @@ function CompareTask({ config, finish, submitting }: { config: { viewpoints: Arr
   return <section className="compare-workbench"><div className="comparison-board">{config.viewpoints.map((item) => <button key={item.id} className={`viewpoint-card ${viewpoint === item.id ? "selected" : ""}`} onClick={() => setViewpoint(item.id)}><span>{item.label}</span><blockquote>“{item.text}”</blockquote><small>来源：{item.source}</small><div>{viewpoint === item.id ? <><CheckCircle2 /> 我的判断</> : "选择此观点"}</div></button>)}<div className="versus">VS</div></div><div className="reason-strip"><h3>你判断的依据是什么？</h3>{config.reasonTags.map((tag) => <button key={tag} className={reasonTag === tag ? "selected" : ""} onClick={() => setReasonTag(tag)}>{reasonTag === tag && <Check />}{tag}</button>)}</div><div className="task-submit-row"><p><BrainCircuit /> 看山只会解释证据相关性，不会替你裁定事实。</p><button className="primary-button" disabled={!viewpoint || !reasonTag || submitting} onClick={() => finish({ viewpoint, reasonTag })}>提交对照分析 <ArrowRight /></button></div></section>;
 }
 
-function NoteTask({ initial, finish, submitting }: { initial: string; finish: (p: Record<string, unknown>) => void; submitting: boolean }) {
+function NoteTask({ initial, finish, submitting }: { initial: string; finish: (p: Record<string, unknown>) => Promise<boolean>; submitting: boolean }) {
   const [note, setNote] = useState(initial || "");
-  return <section className="note-workbench"><div className="notebook"><div className="notebook-binding" /><small>PERSONAL FIELD NOTE / 个人证词</small><h2>你有没有睡够却仍然疲惫的经历？</h2><p>你怀疑是什么影响了恢复感？只记录线索，不必给自己下结论。</p><textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="写下 10-120 字调查笔记..." /><div className="note-count"><span>请勿填写手机号、地址、病历号等隐私信息</span><b className={note.length < 10 ? "invalid" : ""}>{note.length} / 120</b></div></div><aside className="note-boundary"><ShieldCheck /><h3>证据边界</h3><p>这份记录会作为“个人证词”进入报告，但不能单独用来证明普遍结论。</p><button className="primary-button" disabled={note.trim().length < 10 || submitting} onClick={() => finish({ note: note.trim() })}>完成调查笔记 <ArrowRight /></button></aside></section>;
+  const [publishToPin, setPublishToPin] = useState(true);
+
+  async function submitNote() {
+    const normalized = note.trim();
+    if (publishToPin) {
+      void navigator.clipboard?.writeText(normalized);
+      window.open("https://www.zhihu.com/pin", "_blank", "noopener,noreferrer");
+    }
+    await finish({ note: normalized, publishToPin });
+  }
+
+  return <section className="note-workbench"><div className="notebook"><div className="notebook-binding" /><small>PERSONAL FIELD NOTE / 个人证词</small><h2>你有没有睡够却仍然疲惫的经历？</h2><p>你怀疑是什么影响了恢复感？只记录线索，不必给自己下结论。</p><textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={120} placeholder="写下 10-120 字调查笔记..." /><div className="note-count"><span>请勿填写手机号、地址、病历号等隐私信息</span><b className={note.length < 10 ? "invalid" : ""}>{note.length} / 120</b></div></div><aside className="note-side"><div className="note-boundary"><ShieldCheck /><h3>证据边界</h3><p>这份记录会作为“个人证词”进入报告，但不能单独用来证明普遍结论。</p><button className="primary-button" disabled={note.trim().length < 10 || submitting} onClick={submitNote}>{publishToPin ? <><Send /> 完成并打开知乎想法</> : <>完成调查笔记 <ArrowRight /></>}</button></div><label className={`pin-publish-toggle ${publishToPin ? "checked" : ""}`}><input type="checkbox" checked={publishToPin} onChange={(event) => setPublishToPin(event.target.checked)} /><span><i /></span><div><strong>允许一键发布到想法</strong><small>默认开启 · 将复制正文并打开知乎，由你最终确认发布</small></div></label></aside></section>;
 }
 
 function SourceTask({ source, finish, submitting }: { source: { title: string; source: string; publishedAt: string; excerpt: string; supports: string; limitation: string }; finish: (p: Record<string, unknown>) => void; submitting: boolean }) {
   const [support, setSupport] = useState(false);
   const [limitation, setLimitation] = useState(false);
   return <section className="source-workbench"><article className="decisive-source"><div className="source-ribbon">DECISIVE EVIDENCE / 关键来源</div><h2>{source.title}</h2><p className="source-byline">{source.source} · {source.publishedAt}</p><blockquote>{source.excerpt}</blockquote><div className="source-meaning"><section><CheckCircle2 /><div><small>它支持什么</small><p>{source.supports}</p></div></section><section><ShieldCheck /><div><small>它不能证明什么</small><p>{source.limitation}</p></div></section></div></article><aside className="source-confirm"><Stamp /><h3>收录前确认</h3><p>侦探要把结论和限制一起带走。</p><label className={support ? "checked" : ""}><input type="checkbox" checked={support} onChange={(e) => setSupport(e.target.checked)} /><span>我确认这份证据支持的调查方向</span><Check /></label><label className={limitation ? "checked" : ""}><input type="checkbox" checked={limitation} onChange={(e) => setLimitation(e.target.checked)} /><span>我会在结论中保留它的限制</span><Check /></label><button className="primary-button" disabled={!support || !limitation || submitting} onClick={() => finish({ supportChecked: support, limitationChecked: limitation })}>收录决定性证据 <Puzzle /></button></aside></section>;
+}
+
+function EvidenceContext({ evidenceId, caseConfig, run }: { evidenceId: string; caseConfig: NonNullable<ReturnType<typeof useApp>["caseConfig"]>; run: NonNullable<ReturnType<typeof useApp>["run"]> }) {
+  const taskId = { E01: "T01", E02: "T02", E03: "T03", E04: "T04", E05: "T05" }[evidenceId];
+  const payload = taskId ? run.taskPayloads?.[taskId] || {} : {};
+
+  if (evidenceId === "E02") {
+    const dossier = caseConfig.dossiers.find((item) => item.id === payload.dossierId);
+    const excerpt = dossier?.excerpts.find((item) => item.id === payload.excerptId);
+    return <div className="evidence-context"><small>调查上下文 / 知乎卷宗</small><strong>{dossier?.title || "审核卷宗"}</strong><p>{excerpt?.text || dossier?.body || "该证据来自审核卷宗中的重点摘录。"}</p></div>;
+  }
+  if (evidenceId === "E03") {
+    const viewpoint = caseConfig.comparison.viewpoints.find((item) => item.id === payload.viewpoint);
+    return <div className="evidence-context"><small>调查上下文 / 观点对照</small><strong>{viewpoint?.label || "已选择观点"} · {String(payload.reasonTag || "证据相关性")}</strong><p>{viewpoint?.text || "该证据来自两组观点的比较结果。"}</p></div>;
+  }
+  if (evidenceId === "E04") {
+    return <div className="evidence-context"><small>调查上下文 / 个人笔记</small><strong>{payload.publishToPin ? "已准备同步到知乎想法" : "仅作为本案个人证词"}</strong><p>{run.noteDraft || "个人记录只用于提供线索。"}</p></div>;
+  }
+  if (evidenceId === "E05") {
+    return <div className="evidence-context"><small>调查上下文 / 关键来源</small><strong>{caseConfig.keySource.title}</strong><p>{caseConfig.keySource.excerpt}</p><span>限制：{caseConfig.keySource.limitation}</span></div>;
+  }
+  return null;
 }
 
 function EvidencePage() {
@@ -366,7 +501,7 @@ function EvidencePage() {
   const evidence = run.evidenceIds.map((id) => ({ ...caseConfig.evidence.find((item) => item.id === id)!, ...(run.evidenceDetails[id] || {}) }));
   const ready = run.status === "READY" || run.status === "REASONING";
 
-  return <CaseShell pageLabel="证据板与真相拼图"><main className="evidence-page"><section className="evidence-ledger"><header><div><small>EVIDENCE LEDGER</small><h1>线索记录</h1></div><span>{evidence.length} / 6</span></header>{evidence.length ? <div className="evidence-list">{evidence.map((item) => <button key={item.id} className={activeEvidence === item.id ? "active" : ""} onClick={() => setActiveEvidence(activeEvidence === item.id ? null : item.id)}><div className="evidence-id">{item.id}</div><div><span>{item.type}</span><h3>{item.title}</h3><p>{item.excerpt}</p>{activeEvidence === item.id && <footer><small>来源：{item.source}</small>{item.sourceUrl && <a href={item.sourceUrl} target="_blank" rel="noreferrer">查看上下文 <ExternalLink /></a>}</footer>}</div><i>{item.required ? "关键" : item.relation}</i></button>)}</div> : <div className="empty-evidence"><FileSearch /><p>还没有证据入档</p></div>}</section><section className="truth-board"><header><div><small>TRUTH PUZZLE</small><h1>真相拼图</h1></div><span>已解锁 {run.pieceIds.length} / 9</span></header><div className="puzzle-grid">{caseConfig.puzzle.map((label, index) => { const unlocked = run.pieceIds.includes(`P${index + 1}`); return <div key={label} className={unlocked ? "unlocked" : "locked"} style={{ "--piece-x": `${(index % 3) * 50}%`, "--piece-y": `${Math.floor(index / 3) * 50}%` } as React.CSSProperties}>{unlocked ? <><span>{label}</span><CheckCircle2 /></> : <><LockKeyhole /><span>P{index + 1}</span></>}</div>; })}</div><div className="truth-gap"><Lightbulb /><p>{ready ? "关键证据已经补齐。你可以提出一个带边界的真相版本。" : `还有 ${Math.max(0, 4 - evidence.length)} 份关键调查需要完成。拼图不是答案，只是在提醒你哪里仍是空白。`}</p></div><button className="primary-button wide" disabled={!ready} onClick={() => navigate("/reasoning")}>{ready ? "开始组织推理" : "证据尚未闭合"}<ArrowRight /></button></section></main></CaseShell>;
+  return <CaseShell pageLabel="证据板与真相拼图"><main className="evidence-page"><section className="evidence-ledger"><header><div><small>EVIDENCE LEDGER</small><h1>线索记录</h1></div><span>{evidence.length} / 6</span></header>{evidence.length ? <div className="evidence-list">{evidence.map((item) => <article key={item.id} className={activeEvidence === item.id ? "active" : ""}><button className="evidence-summary" onClick={() => setActiveEvidence(activeEvidence === item.id ? null : item.id)}><div className="evidence-id">{item.id}</div><div><span>{item.type}</span><h3>{item.title}</h3><p>{item.excerpt}</p></div><i>{item.required ? "关键" : item.relation}</i></button>{activeEvidence === item.id && <footer><div className="evidence-source"><small>来源：{item.source}</small>{item.id === "E01" && item.sourceUrl ? <a href={item.sourceUrl} target="_blank" rel="noreferrer">查看知乎原文 <ExternalLink /></a> : <span><CheckCircle2 /> 已与调查记录对齐</span>}</div><EvidenceContext evidenceId={item.id} caseConfig={caseConfig} run={run} /></footer>}</article>)}</div> : <div className="empty-evidence"><FileSearch /><p>还没有证据入档</p></div>}</section><section className="truth-board"><header><div><small>TRUTH PUZZLE</small><h1>真相拼图</h1></div><span>已解锁 {run.pieceIds.length} / 9</span></header><div className="puzzle-grid">{caseConfig.puzzle.map((label, index) => { const unlocked = run.pieceIds.includes(`P${index + 1}`); return <div key={label} className={unlocked ? "unlocked" : "locked"} style={{ "--piece-x": `${(index % 3) * 50}%`, "--piece-y": `${Math.floor(index / 3) * 50}%` } as React.CSSProperties}>{unlocked ? <><span>{label}</span><CheckCircle2 /></> : <><LockKeyhole /><span>P{index + 1}</span></>}</div>; })}</div><div className="truth-gap"><Lightbulb /><p>{ready ? "关键证据已经补齐。完成全部五项调查并一次推理成功，可获得 S 级与完整拼图。" : `还有 ${Math.max(0, 4 - evidence.length)} 份关键调查需要完成。拼图不是答案，只是在提醒你哪里仍是空白。`}</p></div><button className="primary-button wide" disabled={!ready} onClick={() => navigate("/reasoning")}>{ready ? "开始组织推理" : "证据尚未闭合"}<ArrowRight /></button></section></main></CaseShell>;
 }
 
 function ReasoningPage() {
@@ -428,7 +563,7 @@ function ReportPage() {
     await createRun();
     navigate("/brief");
   }
-  return <CaseShell pageLabel="结案报告" backTo="/"><main className="report-page"><article className="report-file"><div className="closed-stamp">案件已解决</div><header><div><small>{caseConfig.caseNumber} / FINAL REPORT</small><h1>{caseConfig.title}</h1><p>{caseConfig.question}</p></div><div className="grade"><span>案件评级</span><strong>{report.grade}</strong><small>{report.assisted ? "协助结案" : "独立结案"}</small></div></header><div className="report-metrics"><span><Clock3 /> 用时 <b>{minutes} 分钟</b></span><span><BrainCircuit /> 推理 <b>{report.attemptCount} 次</b></span><span><FolderOpen /> 证据 <b>{run.evidenceIds.length} 份</b></span><span><Puzzle /> 拼图 <b>{run.pieceIds.length} / 9</b></span></div><section className="final-conclusion"><small>本案结论 / REVIEWED CONCLUSION</small><h2>{report.selectedOption.label}</h2><p>{report.conclusion}</p><div><ShieldCheck />{report.limitation}</div></section><section className="report-chain"><h2>我的证据链</h2><div>{report.evidenceChain.map((item, index) => <article key={item.id}><b>{index + 1}</b><small>{item.type}</small><h3>{item.title}</h3><p>{item.excerpt}</p></article>)}</div></section><section className="source-list"><h2>事实来源</h2>{report.sources.map((source, index) => <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer"><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{source.title}</strong><small>{source.source}</small></div><ExternalLink /></a>)}{report.fallbackUsed && <div className="fallback-note"><Terminal /> 本次调查使用过演示搜索数据，正式演示前请检查 CLI 状态。</div>}</section><section className="kanshan-report"><div className="report-photo"><img src={poseClose} alt="看山完成结案" /><span>刘看山 / 主持调查</span></div><blockquote>“{report.comment}”</blockquote></section><footer><button className="primary-button" onClick={() => setShowShare(true)}><Clipboard /> 分享报告</button><button className="secondary-button" onClick={() => navigate("/")}><Map /> 返回事务所</button><button className="text-button" onClick={restart}><RotateCcw /> 重新调查</button></footer></article>{showShare && <div className="modal-backdrop" onClick={() => setShowShare(false)}><div className="share-modal" onClick={(e) => e.stopPropagation()}><button className="modal-close" onClick={() => setShowShare(false)}><X /></button><small>SHARE DRAFT / 本地草稿</small><h2>把证据和限制一起分享</h2><textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={300} /><div className="share-count">{draft.length} / 300</div><p><ShieldCheck /> 本 Demo 不接 OAuth，也不会代表你发布内容。</p><div><button className="primary-button" onClick={copyDraft}><Clipboard /> 复制草稿</button><a className="secondary-button" href="https://www.zhihu.com/" target="_blank" rel="noreferrer">打开知乎 <ExternalLink /></a></div></div></div>}</main></CaseShell>;
+  return <CaseShell pageLabel="结案报告" backTo="/"><main className="report-page"><article className="report-file"><div className="closed-stamp">案件已解决</div><header><div><small>{caseConfig.caseNumber} / FINAL REPORT</small><h1>{caseConfig.title}</h1><p>{caseConfig.question}</p></div><div className="grade"><span>案件评级</span><strong>{report.grade}</strong><small>{report.assisted ? "协助结案" : "独立结案"}</small></div></header><div className="report-metrics"><span><Clock3 /> 用时 <b>{minutes} 分钟</b></span><span><BrainCircuit /> 推理 <b>{report.attemptCount} 次</b></span><span><FolderOpen /> 证据 <b>{run.evidenceIds.length} 份</b></span><span><Puzzle /> 拼图 <b>{run.pieceIds.length} / 9</b></span></div><section className="final-conclusion"><small>本案结论 / REVIEWED CONCLUSION</small><h2>{report.selectedOption.label}</h2><p>{report.conclusion}</p><div><ShieldCheck />{report.limitation}</div></section><section className="report-chain"><h2>我的证据链</h2><div>{report.evidenceChain.map((item, index) => <article key={item.id}><b>{index + 1}</b><small>{item.type}</small><h3>{item.title}</h3><p>{item.excerpt}</p></article>)}</div></section><section className="source-list"><h2>调查来源</h2>{report.sources.map((source, index) => { const content = <><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{source.title}</strong><small>{source.source}</small></div>{source.url ? <ExternalLink /> : <FileSearch />}</>; return source.url ? <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer">{content}</a> : <div className="source-record" key={`${source.title}-${index}`}>{content}</div>; })}{report.fallbackUsed && <div className="fallback-note"><Terminal /> 本次调查使用过演示搜索数据，正式演示前请检查 CLI 状态。</div>}</section><section className="kanshan-report"><div className="report-photo"><img src={poseClose} alt="看山完成结案" /><span>刘看山 / 主持调查</span></div><blockquote>“{report.comment}”</blockquote></section><footer><button className="primary-button" onClick={() => setShowShare(true)}><Clipboard /> 分享报告</button><button className="secondary-button" onClick={() => navigate("/")}><Map /> 返回事务所</button><button className="text-button" onClick={restart}><RotateCcw /> 重新调查</button></footer></article>{showShare && <div className="modal-backdrop" onClick={() => setShowShare(false)}><div className="share-modal" onClick={(e) => e.stopPropagation()}><button className="modal-close" onClick={() => setShowShare(false)}><X /></button><small>SHARE DRAFT / 本地草稿</small><h2>把证据和限制一起分享</h2><textarea value={draft} onChange={(e) => setDraft(e.target.value)} maxLength={300} /><div className="share-count">{draft.length} / 300</div><p><ShieldCheck /> 本 Demo 不接 OAuth，也不会代表你发布内容。</p><div><button className="primary-button" onClick={copyDraft}><Clipboard /> 复制草稿</button><a className="secondary-button" href="https://www.zhihu.com/" target="_blank" rel="noreferrer">打开知乎 <ExternalLink /></a></div></div></div>}</main></CaseShell>;
 }
 
 export function App() {

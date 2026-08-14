@@ -58,3 +58,5 @@ This repo is a PC-only entry for the 看山 coding challenge.
 - The user-generated Image2 art is integrated into the playable flow: `kanshan-agency-hero.png` (home), `investigation-desk-bg.png` (desk), `case001-evidence-photo.png` (brief), and `case001-truth-puzzle.png` (3x3 puzzle).
 - `kanshan-detective-poses.png` is the original transparent four-pose sheet. Its runtime crops are `kanshan-pose-search.png`, `kanshan-pose-read.png`, `kanshan-pose-think.png`, and `kanshan-pose-close.png`; keep the source sheet and all four crops in git.
 - The generated-art integration was visually verified through home, brief, desk, search loading, unlocked puzzle, reasoning/report surfaces at both PC QA targets.
+- V2.0 adds a reference-inspired custom commission creation screen with configurable case options and `zhihu-cli` quick search, a default-on Zhihu question handoff (copy + open Zhihu, user confirms), a default-on T04 handoff to Zhihu Pin, task-aligned evidence context, and the invariant that an S grade requires all five tasks and displays 9/9 puzzle pieces.
+- V2.0 product and acceptance details live in `docs/v2.0-iteration.md`.
