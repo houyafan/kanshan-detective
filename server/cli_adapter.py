@@ -16,6 +16,16 @@ def configured_cli_path() -> Path:
     return Path(os.getenv("ZHIHU_CLI_PATH", str(DEFAULT_CLI)))
 
 
+def cli_runtime_status() -> dict[str, Any]:
+    cli_path = configured_cli_path()
+    available = cli_path.is_file() and os.access(cli_path, os.X_OK)
+    return {
+        "path": str(cli_path),
+        "available": available,
+        "accessSecretEnvConfigured": bool(os.getenv("ZHIHU_ACCESS_SECRET", "").strip()),
+    }
+
+
 def _normalize_item(item: dict[str, Any], fallback: bool = False) -> dict[str, Any]:
     content = str(item.get("ContentText") or item.get("summary") or "").replace("\n", " ").strip()
     return {
@@ -39,7 +49,7 @@ def search_zhihu(query: str, force_demo: bool = False) -> dict[str, Any]:
         return {"results": fallback_results(), "fallbackUsed": True, "source": "demo"}
 
     cli_path = configured_cli_path()
-    if not cli_path.is_file():
+    if not cli_path.is_file() or not os.access(cli_path, os.X_OK):
         return {"results": fallback_results(), "fallbackUsed": True, "source": "demo", "error": "CLI_NOT_FOUND"}
 
     command = [str(cli_path), "search", "zhihu", "--query", query, "--count", "6", "--timeout", "10s"]

@@ -12,7 +12,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .cli_adapter import configured_cli_path, search_zhihu
+from .cli_adapter import cli_runtime_status, search_zhihu
 from .db import DB_PATH, connect, get_case, get_run, init_db, log_event, now_iso, save_run
 
 
@@ -151,7 +151,8 @@ def build_report(state: dict[str, Any], selected_option_id: str, evidence_ids: l
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    return {"ok": True, "sqlite": str(DB_PATH), "cliAvailable": configured_cli_path().is_file()}
+    cli = cli_runtime_status()
+    return {"ok": True, "sqlite": str(DB_PATH), "cliAvailable": cli["available"], "cli": cli}
 
 
 @app.get("/api/case/current")

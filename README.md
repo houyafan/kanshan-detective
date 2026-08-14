@@ -53,6 +53,8 @@ docker run --rm -p 8000:8000 \
 
 打开 <http://127.0.0.1:8000>，健康检查为 <http://127.0.0.1:8000/api/health>。
 
+生产镜像会从知乎官方 CDN 下载与容器架构匹配的 `zhihu-cli 0.3.0`，校验 SHA-256 后安装到 `/usr/local/bin/zhihu-cli`。无需进入运行中的容器手工安装。
+
 ## GitHub Actions 与 Sealos
 
 `.github/workflows/deploy.yml` 会在 PR 上执行前后端校验和 Docker 构建；推送到 `main` 或手动触发时，还会：
@@ -66,6 +68,25 @@ docker run --rm -p 8000:8000 \
 - `ALIYUN_USERNAME`：阿里云镜像仓库用户名。
 - `ALIYUN_PASSWORD`：阿里云镜像仓库访问密码。
 - `KUBE_CONFIG`：Sealos 集群的完整 kubeconfig 文本。
+
+知乎开放平台的 Access Secret 不进入 GitHub 仓库或 Docker 镜像。在 Sealos 应用的环境变量中配置：
+
+```text
+ZHIHU_ACCESS_SECRET=<开放平台生成的 Access Secret>
+```
+
+保存后重新部署或重启应用。部署完成后访问 `/api/health`，应同时看到：
+
+```json
+{
+  "cliAvailable": true,
+  "cli": {
+    "path": "/usr/local/bin/zhihu-cli",
+    "available": true,
+    "accessSecretEnvConfigured": true
+  }
+}
+```
 
 Sealos 首次创建应用时按下列参数与 Action 对齐：
 
@@ -86,10 +107,9 @@ Sealos 首次创建应用时按下列参数与 Action 对齐：
 /Users/zhihu/Library/Application Support/zhihu-cli/current/zhihu-cli
 ```
 
-云服务使用：
+云服务使用（Dockerfile 已预设 CLI 路径，只需配置 Secret）：
 
 ```bash
-export ZHIHU_CLI_PATH=/absolute/path/to/zhihu-cli
 export ZHIHU_ACCESS_SECRET=your_secret
 ```
 

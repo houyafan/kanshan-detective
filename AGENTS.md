@@ -51,6 +51,7 @@ This repo is a PC-only entry for the 看山 coding challenge.
 - The PC-only MVP is implemented with React/Vite, FastAPI, and SQLite.
 - The complete P01-P07 path is playable, including T01-T05, evidence/puzzle unlocks, hard-rule reasoning, assisted close, report, and share draft.
 - The official `zhihu-cli 0.3.0` integration is limited to `search zhihu`; explicit demo fallback is available.
+- The production Docker image installs the official Linux `zhihu-cli 0.3.0` at `/usr/local/bin/zhihu-cli` with SHA-256 verification. Sealos must provide `ZHIHU_ACCESS_SECRET` as an environment variable; never commit it.
 - Production build is served by FastAPI at port 8000 after `pnpm build`.
 - Browser QA passed at 1440x900 and 1366x768 with no horizontal overflow.
 - `public/assets/kanshan/kanshan-cutout.png` is a local chroma-key cutout derived from the supplied green-screen three-view asset; it is not a generated image.
