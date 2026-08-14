@@ -12,6 +12,10 @@ FALLBACK_PATH = ROOT / "data" / "seeds" / "demo_search_results.json"
 DEFAULT_CLI = Path.home() / "Library" / "Application Support" / "zhihu-cli" / "current" / "zhihu-cli"
 
 
+def configured_cli_path() -> Path:
+    return Path(os.getenv("ZHIHU_CLI_PATH", str(DEFAULT_CLI)))
+
+
 def _normalize_item(item: dict[str, Any], fallback: bool = False) -> dict[str, Any]:
     content = str(item.get("ContentText") or item.get("summary") or "").replace("\n", " ").strip()
     return {
@@ -34,7 +38,7 @@ def search_zhihu(query: str, force_demo: bool = False) -> dict[str, Any]:
     if force_demo:
         return {"results": fallback_results(), "fallbackUsed": True, "source": "demo"}
 
-    cli_path = Path(os.getenv("ZHIHU_CLI_PATH", str(DEFAULT_CLI)))
+    cli_path = configured_cli_path()
     if not cli_path.is_file():
         return {"results": fallback_results(), "fallbackUsed": True, "source": "demo", "error": "CLI_NOT_FOUND"}
 

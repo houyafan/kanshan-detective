@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
@@ -8,9 +10,10 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATA_DIR = ROOT / "data"
+BUNDLED_DATA_DIR = ROOT / "data"
+DATA_DIR = Path(os.getenv("KANSHAN_DATA_DIR", str(BUNDLED_DATA_DIR))).expanduser()
 DB_PATH = DATA_DIR / "kanshan.db"
-SEED_PATH = DATA_DIR / "seeds" / "case_001.json"
+SEED_PATH = BUNDLED_DATA_DIR / "seeds" / "case_001.json"
 
 
 def now_iso() -> str:
@@ -19,6 +22,9 @@ def now_iso() -> str:
 
 def connect() -> sqlite3.Connection:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
+    bundled_db = BUNDLED_DATA_DIR / "kanshan.db"
+    if DATA_DIR != BUNDLED_DATA_DIR and not DB_PATH.exists() and bundled_db.is_file():
+        shutil.copy2(bundled_db, DB_PATH)
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=DELETE")

@@ -40,7 +40,43 @@ pnpm build
 .venv/bin/uvicorn server.app:app --host 0.0.0.0 --port 8000
 ```
 
-构建完成后 FastAPI 会直接托管 `dist/`，验收地址为云服务的 8000 端口。SQLite 文件位于 `data/kanshan.db`，部署目录需要可写。
+构建完成后 FastAPI 会直接托管 `dist/`，验收地址为云服务的 8000 端口。SQLite 默认位于 `data/kanshan.db`；设置 `KANSHAN_DATA_DIR` 后改用该可写目录，首次启动会自动复制仓库内的演示数据库。
+
+## Docker
+
+```bash
+docker build -t kanshan-detective:local .
+docker run --rm -p 8000:8000 \
+  -v kanshan-detective-data:/app/runtime-data \
+  kanshan-detective:local
+```
+
+打开 <http://127.0.0.1:8000>，健康检查为 <http://127.0.0.1:8000/api/health>。
+
+## GitHub Actions 与 Sealos
+
+`.github/workflows/deploy.yml` 会在 PR 上执行前后端校验和 Docker 构建；推送到 `main` 或手动触发时，还会：
+
+1. 推送 `sunnynh/kanshan-detective:latest` 和当前 commit SHA 镜像到阿里云容器镜像服务。
+2. 更新 Sealos 中 `ns-z8o8d2sw` 命名空间的 `kanshan-detective` StatefulSet。
+3. 等待滚动部署完成，失败则让 Action 直接失败。
+
+当前 GitHub 仓库需配置三个 Actions Secrets：
+
+- `ALIYUN_USERNAME`：阿里云镜像仓库用户名。
+- `ALIYUN_PASSWORD`：阿里云镜像仓库访问密码。
+- `KUBE_CONFIG`：Sealos 集群的完整 kubeconfig 文本。
+
+Sealos 首次创建应用时按下列参数与 Action 对齐：
+
+- 应用名、StatefulSet 名和容器名：`kanshan-detective`
+- 私有镜像：`crpi-4fx5gjh2gg6qrzgj.cn-beijing.personal.cr.aliyuncs.com/sunnynh/kanshan-detective:latest`
+- 容器端口：`8000`
+- 副本数：`1`（SQLite 不支持这个方案下的多副本共享写入）
+- 持久卷挂载路径：`/app/runtime-data`
+- 健康检查：HTTP GET `/api/health`，端口 `8000`
+
+如 Sealos 实际生成的命名空间、StatefulSet 或容器名与上述不同，同步修改 workflow 顶部的 `K8S_NAMESPACE`、`K8S_STATEFULSET` 和 `K8S_CONTAINER`。
 
 ## CLI 配置
 

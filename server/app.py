@@ -12,8 +12,8 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from .cli_adapter import search_zhihu
-from .db import connect, get_case, get_run, init_db, log_event, now_iso, save_run
+from .cli_adapter import configured_cli_path, search_zhihu
+from .db import DB_PATH, connect, get_case, get_run, init_db, log_event, now_iso, save_run
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -151,8 +151,7 @@ def build_report(state: dict[str, Any], selected_option_id: str, evidence_ids: l
 
 @app.get("/api/health")
 def health() -> dict[str, Any]:
-    cli_path = Path.home() / "Library" / "Application Support" / "zhihu-cli" / "current" / "zhihu-cli"
-    return {"ok": True, "sqlite": str(ROOT / "data" / "kanshan.db"), "cliAvailable": cli_path.is_file()}
+    return {"ok": True, "sqlite": str(DB_PATH), "cliAvailable": configured_cli_path().is_file()}
 
 
 @app.get("/api/case/current")
