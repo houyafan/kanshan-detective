@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import uuid
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from .cli_adapter import answer_zhihu, search_zhihu
@@ -12,6 +14,8 @@ from .db import connect, get_case, get_run, log_event, now_iso, save_run
 
 
 router = APIRouter(prefix="/api/v3", tags=["v3"])
+
+DETECTIVE_NAMES = ["雨窗", "夜灯", "归档", "冷萃", "蓝屏", "线索", "纸页", "回声"]
 
 
 class SearchBody(BaseModel):
@@ -94,9 +98,122 @@ def evidence_by_id(state: dict[str, Any], evidence_id: str) -> dict[str, Any] | 
     return next((item for item in state["evidenceRecords"] if item["id"] == evidence_id), None)
 
 
+def detective_name_for_run(run_id: str) -> str:
+    index = sum(ord(char) for char in run_id) % len(DETECTIVE_NAMES)
+    suffix = run_id[-4:].upper()
+    return f"{DETECTIVE_NAMES[index]}侦探 {suffix}"
+
+
+def latest_award_sequence() -> int:
+    with connect() as conn:
+        row = conn.execute("SELECT COALESCE(MAX(id), 0) AS sequence FROM v3_award_events").fetchone()
+    return int(row["sequence"]) if row else 0
+
+
+def public_award_event(row: Any) -> dict[str, Any]:
+    return {
+        "sequence": row["id"],
+        "eventId": row["event_id"],
+        "runId": row["run_id"],
+        "caseId": row["case_id"],
+        "grade": row["grade"],
+        "detectiveName": row["detective_name"],
+        "message": row["message"],
+        "createdAt": row["created_at"],
+    }
+
+
+def award_events_after(sequence: int, limit: int = 20) -> list[dict[str, Any]]:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, event_id, run_id, case_id, grade, detective_name, message, created_at
+            FROM v3_award_events
+            WHERE id > ?
+            ORDER BY id ASC
+            LIMIT ?
+            """,
+            (sequence, limit),
+        ).fetchall()
+    return [public_award_event(row) for row in rows]
+
+
+def recent_award_events(limit: int = 5) -> list[dict[str, Any]]:
+    safe_limit = max(1, min(limit, 20))
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT id, event_id, run_id, case_id, grade, detective_name, message, created_at
+            FROM v3_award_events
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (safe_limit,),
+        ).fetchall()
+    return [public_award_event(row) for row in reversed(rows)]
+
+
+def create_s_grade_award(state: dict[str, Any], grade: str) -> None:
+    if grade != "S":
+        return
+    run_id = state["runId"]
+    detective_name = state.get("detectiveName") or detective_name_for_run(run_id)
+    message = f"{detective_name}刚刚以 S 级结案《失踪的45分钟》"
+    created_at = now_iso()
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR IGNORE INTO v3_award_events
+            (event_id, run_id, case_id, grade, detective_name, message, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                f"award_{uuid.uuid4().hex[:12]}",
+                run_id,
+                state["caseId"],
+                grade,
+                detective_name,
+                message,
+                created_at,
+            ),
+        )
+
+
 @router.get("/case/current")
 def get_current_case() -> dict[str, Any]:
     return public_case()
+
+
+@router.get("/awards/recent")
+def get_recent_awards(limit: int = 5) -> dict[str, list[dict[str, Any]]]:
+    return {"events": recent_award_events(limit)}
+
+
+@router.get("/awards/stream")
+async def stream_awards(request: Request) -> StreamingResponse:
+    last_event_id = request.headers.get("last-event-id", "")
+    last_sequence = int(last_event_id) if last_event_id.isdigit() else latest_award_sequence()
+
+    async def event_generator():
+        nonlocal last_sequence
+        while True:
+            if await request.is_disconnected():
+                break
+            events = award_events_after(last_sequence)
+            if events:
+                for event in events:
+                    last_sequence = event["sequence"]
+                    data = json.dumps(event, ensure_ascii=False)
+                    yield f"id: {last_sequence}\nevent: award\ndata: {data}\n\n"
+            else:
+                yield ": heartbeat\n\n"
+            await asyncio.sleep(2)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @router.post("/runs")
@@ -120,6 +237,7 @@ def create_run() -> dict[str, Any]:
         "recaps": {},
         "fallbackUsed": False,
         "report": None,
+        "detectiveName": detective_name_for_run(run_id),
         "createdAt": created_at,
         "updatedAt": created_at,
     }
@@ -595,6 +713,7 @@ def final_decision(run_id: str, body: FinalBody) -> dict[str, Any]:
     state["status"] = "CLOSED"
     state["lastPage"] = "/report"
     state["report"] = report
+    create_s_grade_award(state, grade)
     log_event("v3_case_close", run_id, {"grade": grade, "culpritId": body.culpritId})
     return save_run(run_id, state)
 

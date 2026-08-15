@@ -1,4 +1,4 @@
-import type { AssistantTurn, Recap, SearchResult, V3Case, V3Run } from "./types";
+import type { AssistantTurn, AwardEvent, Recap, SearchResult, V3Case, V3Run } from "./types";
 
 const headers = { "Content-Type": "application/json" };
 
@@ -45,5 +45,6 @@ export const v3Api = {
   recap: (runId: string, roundId: string) => request<Recap>(`/api/v3/runs/${runId}/rounds/${roundId}/recap`, { method: "POST" }),
   continueRound: (runId: string, roundId: string) => request<V3Run>(`/api/v3/runs/${runId}/rounds/${roundId}/continue`, { method: "POST" }),
   assistant: (runId: string, question: string) => request<AssistantTurn>(`/api/v3/runs/${runId}/assistant/turns`, { method: "POST", headers, body: JSON.stringify({ turnId: crypto.randomUUID(), question }) }),
-  finalDecision: (runId: string, body: Record<string, unknown>) => request<V3Run>(`/api/v3/runs/${runId}/final-decisions`, { method: "POST", headers, body: JSON.stringify({ decisionId: crypto.randomUUID(), ...body }) })
+  finalDecision: (runId: string, body: Record<string, unknown>) => request<V3Run>(`/api/v3/runs/${runId}/final-decisions`, { method: "POST", headers, body: JSON.stringify({ decisionId: crypto.randomUUID(), ...body }) }),
+  recentAwards: (limit = 5) => request<{ events: AwardEvent[] }>(`/api/v3/awards/recent?limit=${limit}`)
 };

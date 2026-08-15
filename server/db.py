@@ -116,6 +116,16 @@ def init_db() -> None:
                 decision_json TEXT NOT NULL,
                 created_at TEXT NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS v3_award_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                event_id TEXT UNIQUE NOT NULL,
+                run_id TEXT UNIQUE NOT NULL,
+                case_id TEXT NOT NULL,
+                grade TEXT NOT NULL,
+                detective_name TEXT NOT NULL,
+                message TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
             """
         )
         seed = json.loads(SEED_PATH.read_text(encoding="utf-8"))

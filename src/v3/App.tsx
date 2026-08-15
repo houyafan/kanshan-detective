@@ -30,7 +30,7 @@ import {
 } from "lucide-react";
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { v3Api } from "./api";
-import type { AssistantPrompt, EvidenceRecord, RoundConfig, SearchResult, SourceSnapshot, Suspect, V3Case, V3Run } from "./types";
+import type { AssistantPrompt, AwardEvent, EvidenceRecord, RoundConfig, SearchResult, SourceSnapshot, Suspect, V3Case, V3Run } from "./types";
 import "./styles.css";
 
 const poseSearch = "/assets/kanshan/kanshan-pose-search.png";
@@ -235,6 +235,35 @@ function SuspectIcon({ suspect, size = 28 }: { suspect: Suspect; size?: number }
 function Toast() {
   const { toast } = useV3();
   return toast ? <div className="v3-toast"><CheckCircle2 />{toast}</div> : null;
+}
+
+function AwardTicker() {
+  const [events, setEvents] = useState<AwardEvent[]>([]);
+
+  useEffect(() => {
+    const stream = new EventSource("/api/v3/awards/stream");
+    stream.addEventListener("award", (message) => {
+      try {
+        const event = JSON.parse(message.data) as AwardEvent;
+        const seenKey = `kanshan_award_seen_${event.eventId}`;
+        if (sessionStorage.getItem(seenKey)) return;
+        sessionStorage.setItem(seenKey, "true");
+        setEvents((items) => [...items, event].slice(-3));
+      } catch {
+        /* Ignore malformed stream frames. */
+      }
+    });
+    return () => stream.close();
+  }, []);
+
+  useEffect(() => {
+    if (!events.length) return;
+    const timer = window.setTimeout(() => setEvents((items) => items.slice(1)), 4800);
+    return () => window.clearTimeout(timer);
+  }, [events]);
+
+  const event = events[0];
+  return event ? <div className="award-ticker" role="status" aria-live="polite"><Sparkles /><div><small>全事务所捷报</small><strong>{event.message}</strong></div><b>{event.grade}</b></div> : null;
 }
 
 function routeFor(run: V3Run) {
@@ -868,7 +897,7 @@ function V3Routes() {
   const { loading, error } = useV3();
   if (loading) return <LoadingPage />;
   if (error) return <div className="v3-fatal"><X /><h1>案件调取失败</h1><p>{error}</p></div>;
-  return <><Routes><Route path="/" element={<HomePage />} /><Route path="/brief" element={<BriefPage />} /><Route path="/initial-vote" element={<InitialVotePage />} /><Route path="/round/:roundId" element={<RoundPage />} /><Route path="/vote/:roundId" element={<VotePage />} /><Route path="/recap/:roundId" element={<RecapPage />} /><Route path="/board" element={<BoardPage />} /><Route path="/final" element={<FinalPage />} /><Route path="/report" element={<ReportPage />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes><Toast /></>;
+  return <><Routes><Route path="/" element={<HomePage />} /><Route path="/brief" element={<BriefPage />} /><Route path="/initial-vote" element={<InitialVotePage />} /><Route path="/round/:roundId" element={<RoundPage />} /><Route path="/vote/:roundId" element={<VotePage />} /><Route path="/recap/:roundId" element={<RecapPage />} /><Route path="/board" element={<BoardPage />} /><Route path="/final" element={<FinalPage />} /><Route path="/report" element={<ReportPage />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes><AwardTicker /><Toast /></>;
 }
 
 export function V3App() {

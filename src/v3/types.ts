@@ -204,6 +204,7 @@ export interface V3Run {
   runId: string;
   caseId: string;
   caseVersion: number;
+  detectiveName?: string;
   status: string;
   lastPage: string;
   currentRound: number;
@@ -224,4 +225,15 @@ export interface SearchResult {
   url: string;
   type: string;
   fallback: boolean;
+}
+
+export interface AwardEvent {
+  sequence: number;
+  eventId: string;
+  runId: string;
+  caseId: string;
+  grade: string;
+  detectiveName: string;
+  message: string;
+  createdAt: string;
 }
