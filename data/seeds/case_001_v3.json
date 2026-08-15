@@ -28,6 +28,11 @@
       "id": "R1", "index": 1, "title": "23点还亮着的手机", "shortTitle": "手机记录", "mode": "search",
       "clue": "手机记录显示：23:02至23:27，刘看山持续浏览知乎；23:31卧室关灯。手机能解释25分钟，但还有20分钟没有解释。",
       "objective": "搜索真实知乎内容，打开结果并摘录一条与入睡时间相关的证词。",
+      "focusFacts": [
+        {"label": "已确认", "value": "手机活跃 25 分钟", "tone": "blue"},
+        {"label": "关键缺口", "value": "仍有 20 分钟未解释", "tone": "red"},
+        {"label": "本轮边界", "value": "手机不能独自解释 45 分钟", "tone": "gold"}
+      ],
       "queries": ["睡前玩手机 睡眠", "手机蓝光 入睡时间"],
       "evidenceRewards": ["E01", "E02"],
       "hook": "更奇怪的是，16:40还有一杯大杯加浓冷萃。",
@@ -37,6 +42,11 @@
       "id": "R2", "index": 2, "title": "16:40的冷萃", "shortTitle": "冷萃订单", "mode": "professional",
       "clue": "新的物证是一张16:40的大杯加浓冷萃订单。刘看山说：我晚上明明睡着了，下午的咖啡怎么会算嫌疑人？",
       "objective": "阅读专业身份与审核摘录，区分一般规律和个体因果。",
+      "focusFacts": [
+        {"label": "新增物证", "value": "16:40 大杯加浓冷萃", "tone": "blue"},
+        {"label": "关键疑问", "value": "睡着不等于睡眠未受影响", "tone": "red"},
+        {"label": "本轮边界", "value": "一般规律不能证明个体因果", "tone": "green"}
+      ],
       "evidenceRewards": ["E03", "E04"],
       "hook": "00:17、02:48和05:12，刘看山可能醒来过。",
       "fallbackAnswer": "专业内容提示咖啡因可能在夜间仍有影响，但一般规律不能直接替刘看山当晚定案。"
@@ -45,6 +55,11 @@
       "id": "R3", "index": 3, "title": "不记得的三次醒来", "shortTitle": "夜间声音", "mode": "comments",
       "clue": "设备在00:17、02:48、05:12记录到异常声音和疑似觉醒，估算共26分钟。第二天对此没有清晰记忆。",
       "objective": "阅读回答与评论快照，分别标记一条支持和一条质疑。",
+      "focusFacts": [
+        {"label": "设备记录", "value": "三次疑似觉醒，共约 26 分钟", "tone": "blue"},
+        {"label": "因果疑点", "value": "声音先发生，还是醒来后被记录？", "tone": "red"},
+        {"label": "本轮边界", "value": "评论只能形成待查假设", "tone": "gold"}
+      ],
       "evidenceRewards": ["E05", "E06"],
       "hook": "22:20的一条工作消息，可能会改变因果方向。",
       "fallbackAnswer": "声音与觉醒同时出现，但还不知道是声音导致觉醒，还是醒来后设备才捕捉到声音。"
@@ -53,6 +68,11 @@
       "id": "R4", "index": 4, "title": "22:20的未读消息", "shortTitle": "工作压力", "mode": "research",
       "clue": "22:20收到次日汇报消息，22:26备忘录写下担忧，之后一段时间心率高于个人常态。",
       "objective": "阅读研究解读，查看样本与限制，判断它能否直接证明个体因果。",
+      "focusFacts": [
+        {"label": "关键时间", "value": "22:20 消息 / 22:26 担忧备忘", "tone": "blue"},
+        {"label": "异常变化", "value": "之后心率高于个人常态", "tone": "red"},
+        {"label": "本轮边界", "value": "研究关联不能直接给本案定因", "tone": "green"}
+      ],
       "evidenceRewards": ["E07", "E08"],
       "hook": "现在需要把四种机制放在一起比较。",
       "fallbackAnswer": "压力让手机和噪声有了另一种解释：它们可能是表现或触发，但研究仍只提供一般关联。"
@@ -61,6 +81,11 @@
       "id": "R5", "index": 5, "title": "呼叫知乎AI看山助手", "shortTitle": "AI协查", "mode": "assistant",
       "clue": "四名嫌疑人的解释开始重叠。看山助手将基于已解锁证据比较作用方式、指出缺口，但不会替你裁定真凶。",
       "objective": "完成两轮提问、查看来源卡，并提取一条综合推断。",
+      "focusFacts": [
+        {"label": "当前局面", "value": "四种机制出现重叠解释", "tone": "red"},
+        {"label": "AI任务", "value": "比较作用阶段并找出证据缺口", "tone": "blue"},
+        {"label": "使用边界", "value": "AI协查不替侦探裁定真凶", "tone": "green"}
+      ],
       "evidenceRewards": ["E09"],
       "hook": "还需要找一个同样玩过手机、但其他条件不同的夜晚。",
       "fallbackAnswer": "手机主要解释入睡前清醒；压力、咖啡和环境刺激可能影响入睡后的稳定程度。下一步需要对照夜。"
@@ -69,6 +94,11 @@
       "id": "R6", "index": 6, "title": "另一晚的刘看山", "shortTitle": "对照夜", "mode": "comparison",
       "clue": "上周六同样在23点使用手机31分钟，但没有下午咖啡、次日无工作安排、环境也无明显异常；有效睡眠只减少8分钟。",
       "objective": "比较两篇相反观点，指出削弱蓝光先生的证据和一个未控制变量。",
+      "focusFacts": [
+        {"label": "对照事实", "value": "同样使用手机 31 分钟", "tone": "blue"},
+        {"label": "结果差异", "value": "有效睡眠仅减少 8 分钟", "tone": "red"},
+        {"label": "推理价值", "value": "手机作为唯一主因被削弱", "tone": "green"}
+      ],
       "evidenceRewards": ["E10", "E11"],
       "hook": "最后一次调查将针对你当前最怀疑的对象，同时寻找支持和反证。",
       "fallbackAnswer": "手机两晚都出现过，但只有案发夜失踪45分钟。对照削弱了手机作为唯一主因的解释。"
@@ -77,6 +107,11 @@
       "id": "R7", "index": 7, "title": "针对当前嫌疑继续追查", "shortTitle": "定向复核", "mode": "targeted_search",
       "clue": "最后一轮根据你当前的判断生成推荐词。你必须同时寻找一条支持证据和一条削弱证据，避免确认偏误。",
       "objective": "搜索、选择支持与反证，并写下什么证据会让你改票。",
+      "focusFacts": [
+        {"label": "调查对象", "value": "跟随当前最怀疑的嫌疑人", "tone": "blue"},
+        {"label": "防偏要求", "value": "同时保留一条支持和一条反证", "tone": "red"},
+        {"label": "完成条件", "value": "两条证据必须来自不同来源", "tone": "green"}
+      ],
       "queriesBySuspect": {
         "BLUE": "手机使用 睡眠潜伏期 总睡眠时间",
         "COLD": "咖啡因 半衰期 睡眠效率 夜间觉醒",

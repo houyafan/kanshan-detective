@@ -147,6 +147,16 @@ button.suspect-card { width: 100%; }
 .investigation-paper > header h1 { margin: 5px 0 7px; font: 900 31px STKaiti, KaiTi, serif; }
 .investigation-paper > header p { max-width: 780px; margin: 0; color: #66706e; font-size: 10px; line-height: 1.6; }
 .investigation-paper > header > span { height: max-content; padding: 7px 10px; color: var(--red); border: 1px solid var(--red); font: 13px STKaiti, KaiTi, serif; transform: rotate(3deg); }
+.round-focus { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 16px 0 14px; background: #f8f3e8; border-block: 1px solid #c7b793; }
+.round-focus > div { position: relative; min-width: 0; min-height: 74px; display: grid; align-content: center; gap: 5px; padding: 11px 16px 11px 20px; border-right: 1px solid #d6c9ae; }
+.round-focus > div:last-child { border-right: 0; }
+.round-focus > div::before { content: ""; position: absolute; left: 0; top: 11px; bottom: 11px; width: 4px; background: var(--focus-color); }
+.round-focus > div[data-tone="blue"] { --focus-color: var(--blue); }
+.round-focus > div[data-tone="red"] { --focus-color: var(--red); }
+.round-focus > div[data-tone="gold"] { --focus-color: var(--gold); }
+.round-focus > div[data-tone="green"] { --focus-color: var(--green); }
+.round-focus small { color: #7c766c; font-size: 8px; font-weight: 800; }
+.round-focus b { color: var(--focus-color); font-size: 13px; line-height: 1.45; }
 .round-objective { display: flex; gap: 10px; margin: 15px 0; padding: 11px 13px; background: #e9dfca; border-left: 3px solid var(--blue); }
 .round-objective svg { width: 19px; color: var(--blue); }
 .round-objective b { font-size: 10px; }
@@ -426,6 +436,20 @@ button.suspect-card { width: 100%; }
   .board-action img { width: 140px; height: 130px; }
 }
 
+@media (min-width: 768px) {
+  .investigation-paper > header p { font-size: 12px; line-height: 1.7; }
+  .round-objective b { font-size: 11px; }
+  .round-objective p { font-size: 11px; line-height: 1.55; }
+  .search-results h3 { font-size: 15px; }
+  .search-results p { font-size: 11px; line-height: 1.65; }
+  .source-snapshot h3 { font-size: 16px; }
+  .source-snapshot > p { font-size: 12px; line-height: 1.75; }
+  .excerpt-options button, .comment-list button { font-size: 11px; line-height: 1.55; }
+  .study-sample, .boundary-question > header b { font-size: 11px; }
+  .assistant-boundary, .chat-kanshan p, .chat-user, .chat-answer p { font-size: 11px; }
+  .assistant-prompts button, .assistant-citations a b { font-size: 10px; }
+}
+
 @media (max-width: 767px) {
   body { overflow-x: hidden; }
   .v3-primary, .v3-secondary { min-height: 48px; }
@@ -486,6 +510,11 @@ button.suspect-card { width: 100%; }
   .investigation-paper > header h1 { font-size: 26px; }
   .investigation-paper > header p { font-size: 9px; }
   .investigation-paper > header > span { display: none; }
+  .round-focus { grid-template-columns: 1fr; margin: 12px 0; }
+  .round-focus > div { min-height: 51px; padding: 8px 11px 8px 17px; border-right: 0; border-bottom: 1px solid #d6c9ae; }
+  .round-focus > div:last-child { border-bottom: 0; }
+  .round-focus > div::before { top: 8px; bottom: 8px; width: 3px; }
+  .round-focus b { font-size: 11px; }
   .round-objective { margin-block: 12px; }
   .round-submit { position: fixed; z-index: 45; left: 0; right: 0; bottom: 0; min-height: 68px; margin: 0; padding: 9px 12px calc(9px + env(safe-area-inset-bottom)); background: #f2e9d7; border-top: 1px solid #aa9977; box-shadow: 0 -8px 20px rgba(0,0,0,.18); }
   .round-submit p { display: none; }

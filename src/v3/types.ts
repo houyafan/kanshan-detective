@@ -22,6 +22,11 @@ export interface RoundConfig {
   mode: "search" | "professional" | "comments" | "research" | "assistant" | "comparison" | "targeted_search";
   clue: string;
   objective: string;
+  focusFacts: Array<{
+    label: string;
+    value: string;
+    tone: "blue" | "red" | "gold" | "green";
+  }>;
   queries?: string[];
   queriesBySuspect?: Record<string, string>;
   evidenceRewards: string[];
