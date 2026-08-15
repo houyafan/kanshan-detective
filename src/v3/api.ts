@@ -35,6 +35,11 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
 
 export const v3Api = {
   case: () => request<V3Case>("/api/v3/case/current"),
+  commissionSearch: (query: string) => request<{ results: SearchResult[]; fallbackUsed: boolean; source: string }>("/api/commissions/search", {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ query, mode: "auto" })
+  }),
   createRun: () => request<V3Run>("/api/v3/runs", { method: "POST" }),
   getRun: (runId: string) => request<V3Run>(`/api/v3/runs/${runId}`),
   confirmBrief: (runId: string) => request<V3Run>(`/api/v3/runs/${runId}/brief/confirm`, { method: "POST" }),

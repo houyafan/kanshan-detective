@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type Dispatch, type FormEvent, type ReactNode, type SetStateAction } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -14,9 +14,12 @@ import {
   FileSearch,
   FolderOpen,
   History,
+  Lightbulb,
+  LockKeyhole,
   Menu,
   MessageCircle,
   Music2,
+  Plus,
   Puzzle,
   RotateCcw,
   Search,
@@ -307,6 +310,12 @@ function LoadingPage() {
   return <main className="v3-loading"><img src={poseSearch} alt="看山正在调取案件" /><strong>正在调取机密档案</strong><span>CASE 001 / VERSION 3.0</span></main>;
 }
 
+const archivedCases = [
+  { number: "CASE 002", title: "消失的行动力" },
+  { number: "CASE 003", title: "凌晨三点的食欲" },
+  { number: "CASE 004", title: "记忆失窃案" }
+];
+
 function HomePage() {
   const { caseData, run, loading, error, createRun } = useV3();
   const navigate = useNavigate();
@@ -321,15 +330,68 @@ function HomePage() {
     navigate(routeFor(next));
   }
 
+  const closed = run?.status === "CLOSED";
   return <main className="v3-home">
     <header><div className="v3-wordmark large"><span>看山</span><strong>侦探事务所</strong><small>KANSHAN DETECTIVE AGENCY</small></div><div className="home-header-actions"><div className="open-light"><i /> 今夜营业中</div><SoundToggle /></div></header>
     <section className="v3-home-stage">
-      <div className="v3-home-copy"><small>全新案件 / 7轮调查</small><h1>有人偷走了<br /><em>45分钟。</em></h1><p>每轮证据都可能改变你的判断。先别急着猜，真正的侦探会把每个结论带回来源。</p><div><span><Clock3 />{caseData.duration}</span><span><Search />知乎真实搜索</span><span><Bot />知乎直答协查</span></div></div>
+      <div className="v3-home-copy"><small>全新案件 / 7轮调查</small><h1>有人偷走了<br /><em>45分钟。</em></h1><p>每轮证据都可能改变你的判断。先别急着猜，真正的侦探会把每个结论带回来源。</p><div><span><Clock3 />{caseData.duration}</span><span><Search />知乎真实搜索</span><span><Bot />知乎直答协查</span></div><Link className="v3-custom-commission-entry" to="/commission"><Plus /><span><strong>自行发起委托</strong><small>输入问题，生成你的调查线索</small></span><i>NEW</i><ArrowRight /></Link></div>
       <div className="v3-home-focus" />
-      <article className="v3-case-card"><div><span>今日案件</span><b>NEW</b><small>{caseData.caseNumber}</small></div><h2>{caseData.title}</h2><p>{caseData.question}</p><dl><div><dt>难度</dt><dd>进阶</dd></div><div><dt>轮次</dt><dd>7轮</dd></div><div><dt>进度</dt><dd>{run ? `${Math.min(100, Math.round((run.currentRound / 7) * 100))}%` : "0%"}</dd></div></dl>{run ? <button className="v3-primary" onClick={() => navigate(routeFor(run))}>继续调查 <ArrowRight /></button> : <button className="v3-primary" disabled={working} onClick={begin}>{working ? "正在建档" : "接受委托"}<ArrowRight /></button>}<button className="v3-text-button" onClick={begin}><RotateCcw /> 新建调查</button></article>
+      <article className="v3-case-card"><div><span>今日案件</span><b>NEW</b><small>{caseData.caseNumber}</small></div><h2>{caseData.title}</h2><p>{caseData.question}</p><dl><div><dt>难度</dt><dd>进阶</dd></div><div><dt>轮次</dt><dd>7轮</dd></div><div><dt>进度</dt><dd>{closed ? "100%" : run ? `${Math.min(100, Math.round((run.currentRound / 7) * 100))}%` : "0%"}</dd></div></dl>{run ? <button className="v3-primary" onClick={() => navigate(routeFor(run))}>{closed ? "查看结案报告" : "继续调查"} <ArrowRight /></button> : <button className="v3-primary" disabled={working} onClick={begin}>{working ? "正在建档" : "接受委托"}<ArrowRight /></button>}<button className="v3-text-button" onClick={begin}><RotateCcw /> 新建调查</button></article>
     </section>
-    <section className="v3-home-footer"><div><b>案件规则</b><span>初始判断</span><i /><span>7轮取证</span><i /><span>最终指认</span></div><p><ShieldCheck /> 本案用于知识讨论，不构成医学诊断。</p></section>
+    <section className="v3-case-archive"><header><b>案件档案</b><small>ARCHIVE / 2026</small></header>{archivedCases.map((item) => <article key={item.number}><div><span>{item.number}</span><LockKeyhole /></div><strong>{item.title}</strong><small>尚未解锁</small></article>)}<aside><b>调查方法</b><strong>搜索 → 阅读 → 比较 → 推理</strong><small>所有正式结论必须回到来源</small><p><ShieldCheck />本案用于知识讨论，不构成医学诊断。</p></aside></section>
   </main>;
+}
+
+function CommissionPage() {
+  const { setToast } = useV3();
+  const [question, setQuestion] = useState("");
+  const [categories, setCategories] = useState(["生活之谜"]);
+  const [difficulty, setDifficulty] = useState("入门");
+  const [duration, setDuration] = useState("5-8 分钟");
+  const [options, setOptions] = useState(["案件背景", "嫌疑人设定", "调查路径", "证据与干扰项", "结论与解析"]);
+  const [questionDraft, setQuestionDraft] = useState(true);
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<SearchResult[]>([]);
+  const [source, setSource] = useState("");
+
+  function toggleItem(value: string, setter: Dispatch<SetStateAction<string[]>>) {
+    setter((items) => items.includes(value) ? items.filter((item) => item !== value) : [...items, value]);
+  }
+
+  function reset() {
+    setQuestion("");
+    setCategories(["生活之谜"]);
+    setDifficulty("入门");
+    setDuration("5-8 分钟");
+    setOptions(["案件背景", "嫌疑人设定", "调查路径", "证据与干扰项", "结论与解析"]);
+    setQuestionDraft(true);
+    setResults([]);
+    setSource("");
+  }
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const normalized = question.trim().replace(/\s+/g, " ");
+    if (normalized.length < 2) return;
+    setSearching(true);
+    setResults([]);
+    try {
+      const data = await v3Api.commissionSearch(normalized);
+      setResults(data.results.slice(0, 4));
+      setSource(data.source === "zhihu-cli" ? "知乎 CLI 实时线索" : "演示线索");
+      if (data.fallbackUsed) setToast("CLI 暂不可用，当前使用演示线索建立委托");
+      else if (!data.results.length) setToast("暂时没有找到相关线索，换一种问法试试");
+      else setToast("委托线索已建立");
+    } catch (err) { setToast(err instanceof Error ? err.message : "委托生成失败"); }
+    finally { setSearching(false); }
+  }
+
+  async function copyQuestion() {
+    try { await navigator.clipboard.writeText(question.trim()); setToast("问题草稿已复制"); }
+    catch { setToast("复制失败，请手动复制问题"); }
+  }
+
+  return <div className="v3-commission-page"><header><Link to="/" aria-label="返回事务所"><ArrowLeft /></Link><div><small>新功能</small><strong>自行发起委托</strong><span>创建案件</span></div><SoundToggle /></header><main><section className="v3-commission-paper"><div className="commission-heading"><div><small>CREATE YOUR CASE</small><h1>自行发起委托</h1><p>输入一个值得调查的问题，看山会先从知乎寻找相关来源。</p></div><span>创建新案件</span></div><form onSubmit={submit}><label className="commission-question"><b>输入你想调查的问题或关键词</b><textarea autoFocus value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={50} placeholder="例：为什么熬夜后第二天很难集中注意力？" /><small>{question.length}/50</small></label><fieldset><legend>选择案件类型 <small>可多选</small></legend><div className="commission-choice-grid categories">{["生活之谜", "社会现象", "科学探索", "历史人文", "其他"].map((item) => <button type="button" key={item} className={categories.includes(item) ? "selected" : ""} onClick={() => toggleItem(item, setCategories)}>{categories.includes(item) && <CheckCircle2 />}{item}</button>)}</div></fieldset><div className="commission-options-row"><fieldset><legend>案件难度</legend><div className="commission-choice-grid difficulty">{[["入门", "★☆☆☆☆"], ["进阶", "★★☆☆☆"], ["专家", "★★★☆☆"]].map(([label, stars]) => <button type="button" key={label} className={difficulty === label ? "selected" : ""} onClick={() => setDifficulty(label)}><b>{label}</b><small>{stars}</small></button>)}</div></fieldset><fieldset><legend>预计用时</legend><div className="commission-choice-grid duration">{["5-8 分钟", "8-15 分钟", "15 分钟以上"].map((item) => <button type="button" key={item} className={duration === item ? "selected" : ""} onClick={() => setDuration(item)}><Clock3 />{item}</button>)}</div></fieldset></div><fieldset><legend>生成内容 <small>可按需调整</small></legend><div className="commission-checks">{["案件背景", "嫌疑人设定", "调查路径", "证据与干扰项", "结论与解析"].map((item) => <label key={item} className={options.includes(item) ? "checked" : ""}><input type="checkbox" checked={options.includes(item)} onChange={() => toggleItem(item, setOptions)} /><span><Check /></span>{item}</label>)}</div></fieldset><label className={`commission-draft-toggle ${questionDraft ? "checked" : ""}`}><Lightbulb /><input type="checkbox" checked={questionDraft} onChange={(event) => setQuestionDraft(event.target.checked)} /><span><b>生成知乎提问草稿</b><small>仅提供复制与知乎提问页跳转，不会自动发布。</small></span><i><em /></i></label><div className="commission-actions"><button type="button" className="v3-secondary" onClick={reset}>清空重置</button><button className="v3-primary" disabled={searching || question.trim().length < 2}>{searching ? "正在建立委托" : "生成我的委托"}<ArrowRight /></button></div></form>{searching && <div className="commission-searching"><img src={poseSearch} alt="看山正在搜索知乎" /><div><b>看山正在核对知乎线索</b><span>搜索标题、摘要与原文链接...</span></div></div>}{results.length > 0 && <section className="commission-results"><header><div><b>委托线索已建立</b><span>{source} · {difficulty} · {duration}</span></div>{questionDraft && <div><button onClick={() => void copyQuestion()}><Clipboard />复制问题</button><a href="https://www.zhihu.com/question/ask" target="_blank" rel="noreferrer">前往知乎提问 <ExternalLink /></a></div>}</header>{results.map((result, index) => <article key={result.sourceId}><b>{String(index + 1).padStart(2, "0")}</b><div><small>{result.type} · {result.author}</small><h3>{result.title}</h3><p>{result.summary}</p></div><a href={result.url} target="_blank" rel="noreferrer" title="查看知乎原文"><ExternalLink /></a></article>)}</section>}</section><aside className="commission-kanshan"><div><img src={poseRead} alt="看山阅读委托资料" /></div><span>每一个好问题，都是一宗好案件。</span><img src={poseThink} alt="看山准备建立案件" /><blockquote>“输入你想知道的问题，<br />我来帮你把它变成一宗值得调查的委托。”</blockquote><small><ShieldCheck />AI 负责整理线索，事实仍回到知乎来源。</small></aside></main></div>;
 }
 
 type BriefNarrationStatus = "idle" | "playing" | "ended" | "blocked" | "muted" | "error";
@@ -340,6 +402,10 @@ function typedNarrationLine(text: string, start: number, end: number, currentTim
   if (currentTime <= start) return "";
   if (currentTime >= end) return text;
   return text.slice(0, Math.ceil(((currentTime - start) / (end - start)) * text.length));
+}
+
+function cleanRecapText(text: string) {
+  return text.replace(/^\s*(?:\*\*)?根据你的要求[，,]\s*以下三句简短中文[:：](?:\*\*)?\s*/, "").trim();
 }
 
 function BriefNarration({ runId }: { runId: string }) {
@@ -847,7 +913,7 @@ function RecapPage() {
     const updated = await v3Api.continueRound(run!.runId, roundId);
     setRun(updated); navigate(routeFor(updated));
   }
-  return <div className="v3-page"><CaseHeader round={round} /><main className="recap-stage"><section className="recap-card"><div className="recap-label"><Sparkles />看山前情提示</div>{recap ? <><blockquote>{recap.text}</blockquote>{recap.fallbackUsed && <small>模板提示 · 直答服务本轮已降级</small>}<button className="v3-primary" onClick={next}>{recap.cta}<ArrowRight /></button></> : <div className="recap-loading"><span /><span /><span /><p>看山正在整理本轮证据...</p></div>}</section><img src={poseThink} alt="看山生成前情提示" /></main></div>;
+  return <div className="v3-page"><CaseHeader round={round} /><main className="recap-stage"><section className="recap-card"><div className="recap-label"><Sparkles />看山前情提示</div>{recap ? <><blockquote>{cleanRecapText(recap.text)}</blockquote>{recap.fallbackUsed && <small>模板提示 · 直答服务本轮已降级</small>}<button className="v3-primary" onClick={next}>{recap.cta}<ArrowRight /></button></> : <div className="recap-loading"><span /><span /><span /><p>看山正在整理本轮证据...</p></div>}</section><img src={poseThink} alt="看山生成前情提示" /></main></div>;
 }
 
 function BoardPage() {
@@ -897,7 +963,7 @@ function V3Routes() {
   const { loading, error } = useV3();
   if (loading) return <LoadingPage />;
   if (error) return <div className="v3-fatal"><X /><h1>案件调取失败</h1><p>{error}</p></div>;
-  return <><Routes><Route path="/" element={<HomePage />} /><Route path="/brief" element={<BriefPage />} /><Route path="/initial-vote" element={<InitialVotePage />} /><Route path="/round/:roundId" element={<RoundPage />} /><Route path="/vote/:roundId" element={<VotePage />} /><Route path="/recap/:roundId" element={<RecapPage />} /><Route path="/board" element={<BoardPage />} /><Route path="/final" element={<FinalPage />} /><Route path="/report" element={<ReportPage />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes><AwardTicker /><Toast /></>;
+  return <><Routes><Route path="/" element={<HomePage />} /><Route path="/commission" element={<CommissionPage />} /><Route path="/brief" element={<BriefPage />} /><Route path="/initial-vote" element={<InitialVotePage />} /><Route path="/round/:roundId" element={<RoundPage />} /><Route path="/vote/:roundId" element={<VotePage />} /><Route path="/recap/:roundId" element={<RecapPage />} /><Route path="/board" element={<BoardPage />} /><Route path="/final" element={<FinalPage />} /><Route path="/report" element={<ReportPage />} /><Route path="*" element={<Navigate to="/" replace />} /></Routes><AwardTicker /><Toast /></>;
 }
 
 export function V3App() {

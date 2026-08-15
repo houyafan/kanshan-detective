@@ -13,6 +13,14 @@ FALLBACK_PATH = ROOT / "data" / "seeds" / "demo_search_results.json"
 DEFAULT_CLI = Path.home() / "Library" / "Application Support" / "zhihu-cli" / "current" / "zhihu-cli"
 
 
+def _clean_answer_text(answer: str) -> str:
+    preface = re.compile(
+        r"^\s*(?:\*\*)?根据你的要求[，,]\s*以下三句简短中文[:：](?:\*\*)?\s*",
+        re.MULTILINE,
+    )
+    return preface.sub("", answer, count=1).strip()
+
+
 def _answer_is_safe(answer: str, query: str) -> bool:
     forbidden = (
         "真凶就是",
@@ -123,7 +131,7 @@ def answer_zhihu(query: str, fallback_text: str, timeout_seconds: int = 8) -> di
         if result.returncode != 0:
             raise RuntimeError(result.stderr.strip() or "CLI_FAILED")
         payload = json.loads(result.stdout)
-        answer = str(payload["choices"][0]["message"]["content"]).strip()
+        answer = _clean_answer_text(str(payload["choices"][0]["message"]["content"]))
         if not _answer_is_safe(answer, query):
             raise RuntimeError("ANSWER_REJECTED")
         return {
