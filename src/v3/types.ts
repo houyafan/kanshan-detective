@@ -44,6 +44,13 @@ export interface SourceSnapshot {
   body: string;
   excerpts?: string[];
   comments?: Array<{ id: string; relation: string; text: string }>;
+  commentLinks?: Array<{
+    id: string;
+    label: string;
+    focus: string;
+    url: string;
+    tone: "experience" | "challenge" | "alternative";
+  }>;
   limitations: string;
   sample?: string;
 }

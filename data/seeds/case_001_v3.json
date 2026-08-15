@@ -54,11 +54,11 @@
     {
       "id": "R3", "index": 3, "title": "不记得的三次醒来", "shortTitle": "夜间声音", "mode": "comments",
       "clue": "设备在00:17、02:48、05:12记录到异常声音和疑似觉醒，估算共26分钟。第二天对此没有清晰记忆。",
-      "objective": "阅读回答与评论快照，分别标记一条支持和一条质疑。",
+      "objective": "阅读设备记录与三个预埋回答的评论区，判断现有材料能够支持到哪一步。",
       "focusFacts": [
         {"label": "设备记录", "value": "三次疑似觉醒，共约 26 分钟", "tone": "blue"},
         {"label": "因果疑点", "value": "声音先发生，还是醒来后被记录？", "tone": "red"},
-        {"label": "本轮边界", "value": "评论只能形成待查假设", "tone": "gold"}
+        {"label": "本轮边界", "value": "同时出现不等于存在因果", "tone": "gold"}
       ],
       "evidenceRewards": ["E05", "E06"],
       "hook": "22:20的一条工作消息，可能会改变因果方向。",
@@ -131,14 +131,14 @@
       "limitations": "未提供刘看山当晚的咖啡因摄入量、摄入时间、个人代谢特征与客观睡眠监测。"
     },
     {
-      "id": "S_COMMENTS", "roundId": "R3", "title": "睡眠中途醒来，第二天可能不记得吗？", "author": "知乎内容审核快照", "authorType": "回答与评论（演示快照）", "url": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E7%9C%A0%E4%B8%AD%E9%80%94%E9%86%92%E6%9D%A5",
-      "body": "短暂觉醒不一定形成清晰的第二天记忆，但设备记录只能提供线索，不能单独证明声音与觉醒的因果。",
-      "comments": [
-        {"id": "C1", "relation": "support", "text": "我有过夜里短暂醒来、第二天完全想不起来的经历。"},
-        {"id": "C2", "relation": "challenge", "text": "设备先捕捉到声音，不代表一定是声音把人吵醒。"},
-        {"id": "C3", "relation": "supplement", "text": "空调启停、楼上脚步或宠物活动都可能成为环境线索。"}
+      "id": "S_COMMENTS", "roundId": "R3", "title": "设备记录与评论区线索", "author": "打开三个知乎回答，阅读对应评论区", "authorType": "知乎回答 · 评论区阅读", "url": "https://www.zhihu.com/question/20313795/answer/14735925",
+      "body": "00:17、02:48、05:12，异常声音与疑似觉醒在相近时段出现，累计约26分钟；设备记录无法确定声音与醒来的先后关系。",
+      "commentLinks": [
+        {"id": "C1", "label": "个人经验", "focus": "关注短暂觉醒后是否会留下清晰记忆", "url": "https://www.zhihu.com/question/20313795/answer/14735925", "tone": "experience"},
+        {"id": "C2", "label": "方法质疑", "focus": "关注设备记录与主观经历之间的证据限制", "url": "https://www.zhihu.com/question/398836470/answer/2230244735", "tone": "challenge"},
+        {"id": "C3", "label": "替代解释", "focus": "关注除噪声外还有哪些可能原因", "url": "https://www.zhihu.com/question/1900496634221160386/answer/2063567443176560307", "tone": "alternative"}
       ],
-      "limitations": "评论是个人经验，不等于普遍结论。"
+      "limitations": "评论是个人经验与线索，不能替代客观因果证据。"
     },
     {
       "id": "S_RESEARCH", "roundId": "R4", "title": "压力、高唤醒与睡眠片段化研究解读", "author": "研究内容审核组", "authorType": "研究解读（演示快照）", "url": "https://www.zhihu.com/search?type=content&q=%E5%8E%8B%E5%8A%9B%20%E9%AB%98%E5%94%A4%E9%86%92%20%E7%9D%A1%E7%9C%A0",

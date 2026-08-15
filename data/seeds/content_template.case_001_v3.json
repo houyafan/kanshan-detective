@@ -28,17 +28,19 @@
     {
       "roundId": "R3",
       "sourceId": "S_COMMENTS",
-      "sourceUrl": "",
-      "title": "",
+      "sourceUrl": "https://www.zhihu.com/question/20313795/answer/14735925",
+      "title": "设备记录与评论区线索",
       "authorOrOrg": "",
       "approvedExcerpts": [],
-      "approvedComments": [
-        {"relation": "support", "text": ""},
-        {"relation": "challenge", "text": ""}
+      "approvedComments": [],
+      "commentEntryLinks": [
+        {"label": "个人经验", "url": "https://www.zhihu.com/question/20313795/answer/14735925"},
+        {"label": "方法质疑", "url": "https://www.zhihu.com/question/398836470/answer/2230244735"},
+        {"label": "替代解释", "url": "https://www.zhihu.com/question/1900496634221160386/answer/2063567443176560307"}
       ],
       "supportsSuspectIds": ["NOISE"],
       "weakensSuspectIds": [],
-      "limitations": [],
+      "limitations": ["评论是个人经验与线索，不能替代客观因果证据。"],
       "required": true,
       "approved": false,
       "reviewer": "",
