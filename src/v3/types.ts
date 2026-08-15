@@ -138,6 +138,18 @@ export interface AssistantTurn {
 export interface V3Report {
   reportId: string;
   grade: string;
+  score: number;
+  gradeName: string;
+  gradeDescription: string;
+  gradeReasons: Array<{
+    id: "reconstruction" | "evidence" | "counterEvidence" | "boundaries";
+    label: string;
+    score: number;
+    maxScore: number;
+    status: "complete" | "partial" | "missing";
+    statusLabel: string;
+    summary: string;
+  }>;
   culprit: { id: string; name: string };
   accomplice: { id?: string; name: string };
   evidence: EvidenceRecord[];
@@ -149,6 +161,15 @@ export interface V3Report {
   voteChanges: number;
   fallbackUsed: boolean;
   comment: string;
+  closingMessage: string;
+  recommendations: Array<{
+    id: string;
+    title: string;
+    author: string;
+    summary: string;
+    reason: string;
+    url: string;
+  }>;
   shareDraft: string;
 }
 

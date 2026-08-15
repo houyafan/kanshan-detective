@@ -407,6 +407,104 @@ def continue_round(run_id: str, round_id: str) -> dict[str, Any]:
     return save_run(run_id, state)
 
 
+def contains_any(text: str, terms: list[str]) -> bool:
+    return any(term in text for term in terms)
+
+
+def grade_dimension(
+    dimension_id: str,
+    label: str,
+    score: int,
+    max_score: int,
+    complete_at: int,
+    partial_at: int,
+    complete_summary: str,
+    partial_summary: str,
+    missing_summary: str,
+) -> dict[str, Any]:
+    if score >= complete_at:
+        status, status_label, summary = "complete", "已完成", complete_summary
+    elif score >= partial_at:
+        status, status_label, summary = "partial", "部分完成", partial_summary
+    else:
+        status, status_label, summary = "missing", "仍待补充", missing_summary
+    return {
+        "id": dimension_id,
+        "label": label,
+        "score": score,
+        "maxScore": max_score,
+        "status": status,
+        "statusLabel": status_label,
+        "summary": summary,
+    }
+
+
+def score_final_decision(body: FinalBody, selected: list[dict[str, Any]], red_herring: dict[str, Any]) -> dict[str, Any]:
+    selected_ids = {item["id"] for item in selected}
+    reason = body.reason.strip()
+
+    reconstruction = {"PRESSURE": 20, "COLD": 10, "NOISE": 10, "BLUE": 3}.get(body.culpritId, 0)
+    reconstruction += 7 if body.accompliceId == "COLD" else 5 if body.accompliceId == "NOISE" else 0
+    reconstruction += 3 if red_herring["id"] == "E01" else 0
+    reconstruction = min(30, reconstruction)
+
+    evidence_points = {"E07": 12, "E10": 12, "E05": 8, "E03": 6, "E08": 5, "E04": 4, "E02": 2, "E06": 2, "E09": 0}
+    evidence_quality = sum(evidence_points.get(evidence_id, 0) for evidence_id in selected_ids)
+    selected_relations = {item.get("relation") for item in selected}
+    if "支持" in selected_relations and "削弱" in selected_relations:
+        evidence_quality += 6
+    evidence_quality = min(30, evidence_quality)
+
+    counter_evidence = 12 if red_herring["id"] == "E01" else 0
+    if selected_ids.intersection({"E10", "E13"}):
+        counter_evidence += 5
+    explains_25_of_45 = "25" in reason and "45" in reason and contains_any(reason, ["不能", "不足", "只", "部分"])
+    if explains_25_of_45:
+        counter_evidence += 3
+    counter_evidence = min(20, counter_evidence)
+
+    cites_case_fact = contains_any(reason, ["22:20", "22:26", "工作消息", "担忧备忘", "心率", "对照夜", "31分钟", "16:40", "三次声音"])
+    explains_mechanism = "压力" in reason and contains_any(reason, ["高唤醒", "担忧", "心率", "碎片", "稳定", "觉醒"])
+    explains_other_limits = contains_any(reason, ["手机", "咖啡", "噪声", "声音"]) and contains_any(reason, ["不能", "不足", "只能", "部分", "无法", "不充分"])
+    keeps_boundary = contains_any(reason, ["可能", "支持", "不能直接证明", "不能证明", "相关", "因果", "候选", "不充分"])
+    absolute_claim = contains_any(reason, ["研究已经证明刘看山", "医生已经证明刘看山", "看山助手已经证明", "研究证明刘看山就是", "必然是唯一原因", "确定是唯一原因"])
+    boundary_score = sum([cites_case_fact, explains_mechanism, explains_other_limits, keeps_boundary]) * 5
+    if absolute_claim:
+        boundary_score = min(boundary_score, 10)
+
+    score = reconstruction + evidence_quality + counter_evidence + boundary_score
+    has_weaken_evidence = bool(selected_ids.intersection({"E10", "E13"})) or "削弱" in selected_relations
+    s_hard_conditions = {
+        "culprit": body.culpritId == "PRESSURE",
+        "individualFact": "E07" in selected_ids,
+        "counterEvidence": has_weaken_evidence,
+        "redHerring": red_herring["id"] == "E01",
+        "reasonComplete": cites_case_fact and explains_mechanism and explains_other_limits,
+        "boundarySafe": not absolute_claim,
+    }
+    grade = "S" if score >= 85 and all(s_hard_conditions.values()) else "A" if score >= 65 else "B"
+    grade_copy = {
+        "S": ("证据链完整", "你不仅找到了最可能的主因，还通过案件事实、对照证据和反证排除了最显眼的干扰项。你的结论保留了必要的证据边界。"),
+        "A": ("主要方向成立", "你找到了案件的主要方向，证据也能支持当前判断。不过，角色关系、反证或因果边界仍有一处没有完全闭合。"),
+        "B": ("调查完成，结论仍待复核", "你完成了全部调查并形成了自己的判断，但目前的结论仍较依赖显眼线索或一般观点。补充个体事实和反证后，证据链会更加完整。"),
+    }
+    grade_name, grade_description = grade_copy[grade]
+    reasons = [
+        grade_dimension("reconstruction", "案件重建", reconstruction, 30, 25, 10, "主因与共同作用角色判断一致", "主要方向成立，角色关系仍可补充", "尚未形成完整的案件角色重建"),
+        grade_dimension("evidence", "证据质量", evidence_quality, 30, 24, 8, "同时使用事实与对照证据", "已有支持材料，对照或事实仍可加强", "关键证据较依赖一般观点"),
+        grade_dimension("counterEvidence", "反证意识", counter_evidence, 20, 17, 5, "识别误导线索并使用削弱证据", "已注意到证据缺口，反证链仍待闭合", "尚未识别最显眼的误导线索"),
+        grade_dimension("boundaries", "推理边界", boundary_score, 20, 15, 5, "保留了相关与因果的区别", "已保留部分限制，仍有绝对化风险", "理由尚未说明证据限制"),
+    ]
+    return {
+        "grade": grade,
+        "score": score,
+        "gradeName": grade_name,
+        "gradeDescription": grade_description,
+        "gradeReasons": reasons,
+        "gradeHardConditions": s_hard_conditions,
+    }
+
+
 @router.post("/runs/{run_id}/final-decisions")
 def final_decision(run_id: str, body: FinalBody) -> dict[str, Any]:
     state = require_v3_run(run_id)
@@ -420,7 +518,7 @@ def final_decision(run_id: str, body: FinalBody) -> dict[str, Any]:
     selected = [evidence_by_id(state, item) for item in body.evidenceIds]
     if any(item is None or not item.get("eligibleForFinal") for item in selected):
         raise HTTPException(status_code=422, detail="FINAL_EVIDENCE_INVALID")
-    if all(item.get("sourceType") == "AI综合" for item in selected if item):
+    if all(str(item.get("sourceType", "")).startswith("AI") for item in selected if item):
         raise HTTPException(status_code=422, detail="AI_EVIDENCE_PAIR_INVALID")
     red_herring = evidence_by_id(state, body.redHerringId)
     if not red_herring:
@@ -428,14 +526,12 @@ def final_decision(run_id: str, body: FinalBody) -> dict[str, Any]:
 
     case = case_config()
     truth = case["truth"]
-    truth_match = body.culpritId == truth["culprit"]
-    accomplice_match = body.accompliceId == truth["accomplice"]
-    source_quality = any(item["reliability"] in {"事实", "一般规律"} for item in selected if item)
-    grade = "S" if truth_match and accomplice_match and source_quality else ("A" if truth_match else "B")
+    grading = score_final_decision(body, selected, red_herring)
+    grade = grading["grade"]
     vote_changes = sum(1 for left, right in zip(state["votes"], state["votes"][1:]) if left["suspectId"] != right["suspectId"])
     report = {
         "reportId": f"v3_report_{uuid.uuid4().hex[:10]}",
-        "grade": grade,
+        **grading,
         "culprit": {"id": body.culpritId, "name": suspect_name(body.culpritId)},
         "accomplice": {"id": body.accompliceId, "name": suspect_name(body.accompliceId)},
         "evidence": selected,
@@ -452,6 +548,8 @@ def final_decision(run_id: str, body: FinalBody) -> dict[str, Any]:
         "voteChanges": vote_changes,
         "fallbackUsed": state["fallbackUsed"],
         "comment": case["report"]["comment"],
+        "closingMessage": case["report"]["closingMessage"],
+        "recommendations": case["report"]["recommendations"],
         "shareDraft": case["report"]["shareTemplate"].format(culprit=suspect_name(body.culpritId)),
         "createdAt": now_iso(),
     }

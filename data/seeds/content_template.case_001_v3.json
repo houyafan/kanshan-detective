@@ -33,6 +33,14 @@
     "conditionalConclusionChecked": false,
     "notes": "挑战材料可以是反例、替代解释或方法边界；不得要求它与支持材料形成简单的相反观点。"
   },
+  "reportReview": {
+    "gradingRulesChecked": false,
+    "sGradeHardConditionsChecked": false,
+    "gradeReasonCopyChecked": false,
+    "recommendationLinksChecked": false,
+    "kanshanClosingCopyChecked": false,
+    "notes": "评级仅使用案件重建、证据质量、反证意识和推理边界；改票次数与调查耗时不得计分。"
+  },
   "sources": [
     {
       "roundId": "R2",

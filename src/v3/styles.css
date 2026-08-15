@@ -637,19 +637,37 @@ button.suspect-card { width: 100%; }
 .final-submit-card img { width: 200px; height: 240px; display: block; margin: 0 auto; object-fit: contain; }
 .final-submit-card p { color: #626b68; font-size: 9px; line-height: 1.6; }
 .final-submit-card .v3-primary { width: 100%; margin-top: 12px; }
-.report-page > main { min-height: calc(100vh - 76px); display: grid; grid-template-columns: minmax(760px, 980px) 240px; gap: 18px; justify-content: center; align-items: start; padding: 24px; background: rgba(7,14,18,.78); }
+.report-page > main { min-height: calc(100vh - 76px); display: grid; grid-template-columns: minmax(900px, 1120px) 250px; gap: 18px; justify-content: center; align-items: start; padding: 24px; background: rgba(7,14,18,.78); }
 .report-paper { position: relative; padding: 42px 48px; background: var(--paper); border: 1px solid #bda97c; box-shadow: 12px 13px 0 rgba(0,0,0,.2); }
-.report-paper > header { display: flex; justify-content: space-between; padding-bottom: 15px; border-bottom: 2px solid #26343a; }
+.report-paper > header { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 15px; border-bottom: 2px solid #26343a; }
 .report-paper header small { color: var(--blue-dark); font: 8px ui-monospace, monospace; }
 .report-paper header h1 { margin: 4px 0; font: 900 34px STKaiti, KaiTi, serif; }
 .report-paper header p { margin: 0; color: #67706d; font-size: 10px; }
-.report-paper header > strong { color: var(--green); font: 800 66px Georgia, serif; }
-.report-rebuild { margin: 18px 0; padding: 20px; color: white; background: #18303a; border-left: 4px solid var(--blue); }
+.report-grade { min-width: 128px; display: grid; grid-template-columns: 62px 1fr; align-items: center; align-content: center; }
+.report-grade > strong { grid-row: 1 / 3; color: var(--green); font: 800 66px Georgia, serif; line-height: 1; }
+.report-grade > span { align-self: end; color: #315d45; font-size: 12px; font-weight: 800; }
+.report-grade > small { align-self: start; color: #748078; font-size: 8px; }
+.report-summary { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(330px, .95fr); margin: 18px 0; color: white; background: #18303a; border-left: 4px solid var(--blue); }
+.report-rebuild { margin: 0; padding: 20px; color: white; }
 .report-rebuild small { color: #7db5e5; font-size: 8px; }
 .report-rebuild h2 { margin: 6px 0 8px; font: 21px STKaiti, KaiTi, serif; }
 .report-rebuild p { color: #d3dcda; font-size: 10px; line-height: 1.7; }
 .report-rebuild div { display: flex; flex-wrap: wrap; gap: 7px; }
 .report-rebuild span { padding: 5px 7px; color: #c4cfcc; border: 1px solid #506a73; font-size: 8px; }
+.report-grade-reasons { padding: 18px; border-left: 1px dashed #6b8189; }
+.report-grade-reasons > header h2 { margin: 0; font: 16px STKaiti, KaiTi, serif; }
+.report-grade-reasons > header p { margin: 4px 0 10px; color: #aebdbb; font-size: 8px; line-height: 1.5; }
+.report-grade-reasons > div { min-height: 34px; display: grid; grid-template-columns: 17px 78px 1fr auto; gap: 6px; align-items: center; padding: 5px 7px; border-top: 1px solid #40565e; }
+.report-grade-reasons > div svg { width: 15px; }
+.report-grade-reasons > div[data-status="complete"] svg { color: #75ca98; }
+.report-grade-reasons > div[data-status="partial"] svg { color: #e2b35e; }
+.report-grade-reasons > div[data-status="missing"] svg { color: #df8176; }
+.report-grade-reasons > div b { font-size: 8px; }
+.report-grade-reasons > div span { color: #c4cfcc; font-size: 7px; }
+.report-grade-reasons > div small { color: #819497; font-size: 7px; white-space: nowrap; }
+.report-user-reason { margin-bottom: 17px; padding: 13px 16px; background: #faf5e9; border: 1px solid #c8b99a; }
+.report-user-reason h2 { margin: 0 0 6px; font: 16px STKaiti, KaiTi, serif; }
+.report-user-reason p { margin: 0; color: #4f5d59; font-size: 9px; line-height: 1.65; }
 .report-path h2, .report-evidence h2 { font: 18px STKaiti, KaiTi, serif; }
 .report-path > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .report-path > div div { display: flex; align-items: center; gap: 5px; padding: 6px 8px; background: #faf5e9; border: 1px solid #c8b99a; }
@@ -664,11 +682,26 @@ button.suspect-card { width: 100%; }
 .report-evidence strong { font-size: 9px; }
 .report-evidence p { margin: 4px 0; color: #686d67; font-size: 8px; line-height: 1.5; }
 .report-evidence small { color: #7c7a71; font-size: 7px; }
+.report-recommendations { margin-top: 18px; }
+.report-recommendations > header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.report-recommendations > header h2 { margin: 0; font: 18px STKaiti, KaiTi, serif; }
+.report-recommendations > header p { margin: 3px 0 0; color: #777c76; font-size: 8px; }
+.report-recommendations > header > span { padding: 4px 8px; color: white; background: var(--blue); font-size: 7px; }
+.report-recommendations > div { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; margin-top: 10px; }
+.report-recommendations article { min-width: 0; display: flex; flex-direction: column; padding: 13px; background: #faf5e9; border: 1px solid #c8b99a; }
+.report-recommendations article small { color: var(--blue-dark); font-size: 7px; }
+.report-recommendations article h3 { margin: 6px 0; font-size: 11px; line-height: 1.45; }
+.report-recommendations article p { margin: 0; color: #606965; font-size: 8px; line-height: 1.55; }
+.report-recommendations article em { display: block; margin-top: 8px; color: #7a6545; font-size: 7px; font-style: normal; }
+.report-recommendations article a { display: flex; align-items: center; justify-content: flex-end; gap: 5px; margin-top: auto; padding-top: 11px; color: var(--blue); font-size: 8px; font-weight: 800; }
+.report-recommendations article a svg { width: 14px; }
+.report-recommendations > footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: #7c7d75; font-size: 7px; }
+.report-recommendations > footer svg { width: 14px; }
 .report-fallback { display: flex; align-items: center; gap: 7px; margin-top: 14px; padding: 9px; color: #845d1e; background: #f0ddb3; font-size: 8px; }
 .report-fallback svg { width: 16px; }
 .report-paper > blockquote { margin: 20px 0; padding: 15px 18px; color: #d9e1df; background: #18303a; font: 15px/1.7 STKaiti, KaiTi, serif; }
 .report-paper > footer { display: flex; gap: 10px; }
-.report-page > main > aside { align-self: end; color: white; text-align: center; }
+.report-page > main > aside { position: sticky; top: 96px; align-self: start; margin-top: 360px; color: white; text-align: center; }
 .report-page > main > aside img { width: 220px; height: 280px; object-fit: contain; }
 .report-page > main > aside p { padding: 13px; color: #d1dbd8; background: #17303b; font: 13px/1.7 STKaiti, KaiTi, serif; }
 
@@ -683,6 +716,10 @@ button.suspect-card { width: 100%; }
   .case-board { grid-template-columns: 170px minmax(580px, 1fr); }
   .board-action { grid-column: 2; grid-row: 2; grid-template-columns: 150px 1fr; grid-template-rows: auto; }
   .board-action img { width: 140px; height: 130px; }
+  .report-page > main { grid-template-columns: minmax(680px, 1fr); }
+  .report-page > main > aside { display: none; }
+  .report-summary { grid-template-columns: 1fr; }
+  .report-grade-reasons { border-top: 1px dashed #6b8189; border-left: 0; }
 }
 
 @media (min-width: 768px) {
@@ -859,10 +896,13 @@ button.suspect-card { width: 100%; }
   .report-paper { padding: 34px 18px; }
   .report-paper > .v3-stamp { right: 18px; top: 20px; font-size: 13px; }
   .report-paper header h1 { font-size: 27px; }
-  .report-paper header > strong { font-size: 52px; }
+  .report-grade > strong { font-size: 52px; }
+  .report-summary { grid-template-columns: 1fr; }
+  .report-grade-reasons { border-top: 1px dashed #6b8189; border-left: 0; }
   .report-rebuild div { display: grid; }
   .report-evidence { grid-template-columns: 1fr; }
   .report-evidence h2 { grid-column: 1; }
+  .report-recommendations > div { grid-template-columns: 1fr; }
   .report-paper > footer { display: grid; }
   .report-page > main > aside { display: none; }
 }
