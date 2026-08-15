@@ -34,6 +34,20 @@ export interface RoundConfig {
   fallbackAnswer: string;
   assistantIntro?: string;
   assistantPrompts?: AssistantPrompt[];
+  comparisonRows?: Array<{
+    id: "phone" | "coffee" | "pressure" | "environment" | "sleep";
+    label: string;
+    caseNight: string;
+    controlNight: string;
+    status: string;
+    same: boolean;
+  }>;
+  comparisonJudgement?: {
+    question: string;
+    options: Array<{ id: string; label: string; correct: boolean }>;
+    correctFeedback: string;
+    incorrectFeedback: string;
+  };
 }
 
 export interface AssistantPrompt {

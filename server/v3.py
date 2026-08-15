@@ -269,6 +269,8 @@ def complete_round(run_id: str, round_id: str, body: CompleteRoundBody) -> dict[
     config = round_config(round_id)
     if round_id == "R5" and len(state["assistantTurns"]) < 1:
         raise HTTPException(status_code=422, detail="ASSISTANT_VIEW_REQUIRED")
+    if round_id == "R6" and body.payload.get("comparisonAnswer") != "weaken-phone":
+        raise HTTPException(status_code=422, detail="COMPARISON_JUDGEMENT_REQUIRED")
 
     overrides = body.payload.get("evidence", {})
     blueprints = {item["id"]: item for item in case_config()["evidenceBlueprints"]}

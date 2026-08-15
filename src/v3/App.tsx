@@ -361,10 +361,9 @@ function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (v
   const { caseData } = useV3();
   const sources = caseData?.sources.filter((item) => item.roundId === round.id) || [];
   const [boundaryAnswer, setBoundaryAnswer] = useState("");
-  const [viewpoint, setViewpoint] = useState("");
-  const [variable, setVariable] = useState("");
 
   useEffect(() => {
+    if (round.mode === "comparison") return;
     let ready = false;
     let evidence: Record<string, unknown> = {};
     if (round.mode === "professional") {
@@ -376,12 +375,11 @@ function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (v
     } else if (round.mode === "research") {
       ready = boundaryAnswer === "strengthens";
       const source = sources[0]; evidence = { E08: { excerpt: source?.body, relation: "支持", sourceId: source?.id, sourceTitle: source?.title, sourceUrl: source?.url, limitations: source?.limitations } };
-    } else if (round.mode === "comparison") {
-      ready = Boolean(viewpoint && variable);
-      const source = sources.find((item) => item.id === viewpoint); evidence = { E11: { excerpt: source?.body, sourceId: source?.id, sourceTitle: source?.title, sourceUrl: source?.url, limitations: source?.limitations } };
     }
-    onState({ ready, payload: { boundaryAnswer, viewpoint, variable, evidence } });
-  }, [boundaryAnswer, viewpoint, variable]);
+    onState({ ready, payload: { boundaryAnswer, evidence } });
+  }, [boundaryAnswer, round.mode]);
+
+  if (round.mode === "comparison") return <ComparisonWorkbench round={round} onState={onState} />;
 
   const workbenchClass = round.mode === "professional" ? "professional-workbench" : round.mode === "comments" ? "comments-workbench" : round.mode === "research" ? "research-workbench" : "";
   return <section className={`snapshot-workbench ${workbenchClass}`}>
@@ -389,13 +387,76 @@ function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (v
       {round.mode === "professional" && <><div className="professional-takeaways">{source.excerpts?.map((excerpt) => <span key={excerpt}><CheckCircle2 />{excerpt}</span>)}</div><div className="professional-proof-limit"><b>这篇内容不能证明</b><p>{source.limitations}</p></div></>}
       {round.mode === "comments" && <><div className="device-events">{["00:17", "02:48", "05:12"].map((time) => <span key={time}><b>{time}</b><small><Volume2 />异常声音 · 疑似觉醒</small></span>)}<strong>累计约<br /><b>26 分钟</b></strong></div><div className="comment-reading-heading"><MessageCircle /><b>评论区阅读</b><small>只读 · 不计分</small></div><div className="comment-link-list">{source.commentLinks?.map((link) => <a key={link.id} href={link.url} target="_blank" rel="noreferrer" data-tone={link.tone}><span>{link.label}</span><p>{link.focus}</p><strong>阅读评论区 <ExternalLink /></strong></a>)}</div></>}
       {round.mode === "research" && <><div className="research-findings">{source.excerpts?.map((excerpt) => <span key={excerpt}><CheckCircle2 />{excerpt}</span>)}</div><div className="research-mechanism"><BookOpen /><p><b>研究机制</b>持续威胁可通过 mSTN-CRH-LGP 神经环路改变 REM 睡眠及觉醒反应。</p></div><div className="research-limit"><ShieldCheck />{source.limitations}</div></>}
-      {round.mode === "comparison" && <button className={`viewpoint-select ${viewpoint === source.id ? "selected" : ""}`} onClick={() => setViewpoint(source.id)}>{viewpoint === source.id ? <CheckCircle2 /> : <i />} 这篇观点更能解释两晚差异</button>}
     </SourceCard>)}
     {round.mode === "research" && <section className="case-alignment"><header><div><small>与本案对照</small><h3>研究机制和本案表现是否一致？</h3></div><span>线索方向 · 一致</span></header><div>{sources[0]?.caseAlignment?.map((item, index) => <article key={item.label}><i>{index + 1}</i><b>{item.label}</b><p>{item.value}</p></article>)}</div><footer><CheckCircle2 /><p><b>研究机制与本案表现相呼应</b>{sources[0]?.caseConclusion}</p></footer></section>}
     {round.mode === "professional" && <div className="boundary-question"><header><small>因果边界判断</small><b>仅凭这篇内容，能否认定刘看山当晚的睡眠问题由咖啡导致？</b><p>请选择一个答案。</p></header><div className="boundary-options"><button className={boundaryAnswer === "can" ? "selected incorrect" : ""} onClick={() => setBoundaryAnswer("can")}><span />能直接证明</button><button className={boundaryAnswer === "cannot" ? "selected correct" : ""} onClick={() => setBoundaryAnswer("cannot")}><span />不能直接证明</button></div>{boundaryAnswer && <div className={`boundary-feedback ${boundaryAnswer === "cannot" ? "correct" : "incorrect"}`}>{boundaryAnswer === "cannot" ? <CheckCircle2 /> : <X />}<p><b>{boundaryAnswer === "cannot" ? "判断正确" : "还不能这样下结论"}</b>{boundaryAnswer === "cannot" ? "文章能够支持一般规律，但缺少刘看山当晚的个体数据，不能确认个体因果。" : "文章未提供刘看山当晚的摄入量、摄入时间、代谢特征和客观睡眠监测。"}</p></div>}</div>}
     {round.mode === "comments" && <div className="boundary-question"><header><small>因果边界判断</small><b>仅凭设备记录和这些评论，能否认定声音导致刘看山醒来？</b><p>请选择一个答案。</p></header><div className="boundary-options"><button className={boundaryAnswer === "can" ? "selected incorrect" : ""} onClick={() => setBoundaryAnswer("can")}><span />能直接证明</button><button className={boundaryAnswer === "cannot" ? "selected correct" : ""} onClick={() => setBoundaryAnswer("cannot")}><span />不能直接证明</button></div>{boundaryAnswer && <div className={`boundary-feedback ${boundaryAnswer === "cannot" ? "correct" : "incorrect"}`}>{boundaryAnswer === "cannot" ? <CheckCircle2 /> : <X />}<p><b>{boundaryAnswer === "cannot" ? "判断正确" : "还不能这样下结论"}</b>{boundaryAnswer === "cannot" ? "现有材料只能说明声音与疑似觉醒在时间上接近；缺少明确先后关系，不能确认个体因果。" : "评论经验和设备同一时段记录，都不能排除醒来后发声或其他环境原因。"}</p></div>}</div>}
     {round.mode === "research" && <div className="boundary-question research-judgement"><header><small>证据作用判断</small><b>这篇动物机制研究在本案中意味着什么？</b><p>请选择一个答案。</p></header><div className="boundary-options"><button className={boundaryAnswer === "sole" ? "selected incorrect" : ""} onClick={() => setBoundaryAnswer("sole")}><span />可以单独定案：工作压力是唯一原因</button><button className={boundaryAnswer === "strengthens" ? "selected correct" : ""} onClick={() => setBoundaryAnswer("strengthens")}><span />不能单独定案，但显著增强压力假设</button></div>{boundaryAnswer && <div className={`boundary-feedback ${boundaryAnswer === "strengthens" ? "correct" : "incorrect"}`}>{boundaryAnswer === "strengthens" ? <CheckCircle2 /> : <X />}<p><b>{boundaryAnswer === "strengthens" ? "判断正确" : "可信研究也不能越过个体边界"}</b>{boundaryAnswer === "strengthens" ? "研究揭示持续威胁影响 REM 睡眠与觉醒的神经机制；本案的压力事件、担忧记录、心率升高和睡眠片段化方向一致，因此压力假设被显著增强。" : "这项研究以小鼠为模式动物，不能排除咖啡因、环境声音等其他变量，也不能单独完成个体定因。"}</p></div>}</div>}
-    {round.mode === "comparison" && <div className="hypothesis"><label>指出一个仍未控制的变量</label>{["当天情绪", "实际入睡时间", "环境温度"].map((item) => <button key={item} className={variable === item ? "selected" : ""} onClick={() => setVariable(item)}>{item}</button>)}</div>}
+  </section>;
+}
+
+function ComparisonRowIcon({ id }: { id: string }) {
+  if (id === "phone") return <Smartphone />;
+  if (id === "coffee") return <Coffee />;
+  if (id === "pressure") return <BriefcaseBusiness />;
+  if (id === "environment") return <Volume2 />;
+  return <Clock3 />;
+}
+
+function ComparisonWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
+  const { caseData } = useV3();
+  const [answer, setAnswer] = useState("");
+  const judgement = round.comparisonJudgement;
+  const selectedOption = judgement?.options.find((option) => option.id === answer);
+  const ready = Boolean(selectedOption?.correct);
+
+  useEffect(() => {
+    const source = caseData?.sources.find((item) => item.id === "S_COMPARE_B");
+    onState({
+      ready,
+      payload: {
+        comparisonAnswer: answer,
+        evidence: {
+          E11: {
+            excerpt: "手机暴露基本相同而睡眠结果不同，削弱了手机作为唯一主因的解释；咖啡、压力和环境仍需继续保留。",
+            relation: "补充",
+            sourceId: source?.id,
+            sourceTitle: source?.title,
+            sourceUrl: source?.url,
+            limitations: "自然对照同时改变多个条件，不能证明其中任何一个是唯一原因。"
+          }
+        }
+      }
+    });
+  }, [answer, ready]);
+
+  return <section className="comparison-workbench">
+    <div className="comparison-main">
+      <section className="comparison-table-card">
+        <header><h3>两晚条件对照</h3><span>自然对照 · 非严格实验</span></header>
+        <div className="comparison-table">
+          <div className="comparison-table-head"><b>比较项目</b><b>案发夜</b><b>对照夜</b><b>是否相同</b></div>
+          {round.comparisonRows?.map((row) => <div className="comparison-table-row" key={row.id}><strong><ComparisonRowIcon id={row.id} />{row.label}</strong><p>{row.caseNight}</p><p>{row.controlNight}</p><span className={row.same ? "same" : row.id === "sleep" ? "improved" : "different"}>{row.status}</span></div>)}
+        </div>
+      </section>
+      <section className="comparison-meaning">
+        <header><h3>对照夜能说明什么？</h3></header>
+        <div className="comparison-reasoning">
+          <div><i>1</i><b>手机暴露基本相同</b></div>
+          <ArrowRight />
+          <div><i>2</i><b>睡眠结果出现差异</b></div>
+          <ArrowRight />
+          <div><i>3</i><b>手机不能单独解释两晚差异</b></div>
+        </div>
+        <div className="comparison-result"><ShieldCheck /><p><b>手机作为唯一主因被削弱</b>它仍可能影响入睡，但不足以解释全部睡眠变化。</p></div>
+        <div className="comparison-boundary"><ShieldCheck /><p>咖啡、压力和环境同时改变，因此不能证明其中任何一项是唯一原因。咖啡的实际影响还取决于摄入量、饮用时间和个人代谢。</p></div>
+      </section>
+    </div>
+    <section className="comparison-judgement">
+      <header><div><h3>证据作用判断 <span>单选 · 计入定级</span></h3><p>{judgement?.question}</p></div></header>
+      <div className="comparison-options">{judgement?.options.map((option) => <button key={option.id} className={answer === option.id ? option.correct ? "selected correct" : "selected incorrect" : ""} onClick={() => setAnswer(option.id)}><i />{option.label}</button>)}</div>
+      {selectedOption && <div className={`comparison-feedback ${selectedOption.correct ? "correct" : "incorrect"}`}>{selectedOption.correct ? <CheckCircle2 /> : <X />}<p><b>{selectedOption.correct ? "判断正确" : "证据还不能支持这个结论"}</b>{selectedOption.correct ? judgement?.correctFeedback : judgement?.incorrectFeedback}</p></div>}
+    </section>
   </section>;
 }
 
@@ -445,7 +506,7 @@ function RoundPage() {
   const round = caseData.rounds.find((item) => item.id === roundId);
   if (!round) return <Navigate to={routeFor(run)} replace />;
   if (run.currentRound !== round.index && run.status !== "CLOSED") return <Navigate to={routeFor(run)} replace />;
-  const isBoundaryRound = ["professional", "comments", "research"].includes(round.mode);
+  const isBoundaryRound = ["professional", "comments", "research", "comparison"].includes(round.mode);
   const sideHint = round.mode === "professional"
     ? "读懂来源，也要看清它不能证明什么。"
     : round.mode === "comments"

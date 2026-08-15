@@ -15,7 +15,7 @@
     {"id": "PRESSURE", "name": "压力影子", "alias": "工作压力", "color": "#735b8d", "icon": "briefcase", "summary": "能够重新解释手机、心率和环境刺激，是底层原因候选。"}
   ],
   "timeline": [
-    {"time": "16:40", "title": "冷萃订单", "round": 2, "detail": "大杯冷萃，加浓。"},
+    {"time": "16:40", "title": "咖啡订单", "round": 2, "detail": "大杯拿铁。"},
     {"time": "22:20", "title": "工作消息", "round": 4, "detail": "次日汇报相关消息。"},
     {"time": "22:26", "title": "担忧备忘", "round": 4, "detail": "明天汇报千万别出问题。"},
     {"time": "23:02-23:27", "title": "手机活跃", "round": 1, "detail": "主要浏览知乎内容。"},
@@ -35,15 +35,15 @@
       ],
       "queries": ["睡前玩手机 睡眠", "手机蓝光 入睡时间"],
       "evidenceRewards": ["E01", "E02"],
-      "hook": "更奇怪的是，16:40还有一杯大杯加浓冷萃。",
+      "hook": "更奇怪的是，16:40还有一杯大杯拿铁。",
       "fallbackAnswer": "手机记录覆盖了25分钟，但案件里失踪的是45分钟。它是醒目的嫌疑，却还不能解释全部缺口。"
     },
     {
-      "id": "R2", "index": 2, "title": "16:40的冷萃", "shortTitle": "冷萃订单", "mode": "professional",
-      "clue": "新的物证是一张16:40的大杯加浓冷萃订单。刘看山说：我晚上明明睡着了，下午的咖啡怎么会算嫌疑人？",
+      "id": "R2", "index": 2, "title": "16:40的拿铁", "shortTitle": "咖啡订单", "mode": "professional",
+      "clue": "新的物证是一张16:40的大杯拿铁订单。刘看山说：我晚上明明睡着了，下午的咖啡怎么会算嫌疑人？",
       "objective": "阅读专业身份与审核摘录，判断这条证据能说明什么、不能说明什么。",
       "focusFacts": [
-        {"label": "新增物证", "value": "16:40 大杯加浓冷萃", "tone": "blue"},
+        {"label": "新增物证", "value": "16:40 大杯拿铁", "tone": "blue"},
         {"label": "关键疑问", "value": "睡着是否等于睡眠未受影响", "tone": "red"},
         {"label": "本轮边界", "value": "一般规律不能证明个体因果", "tone": "green"}
       ],
@@ -149,16 +149,33 @@
     },
     {
       "id": "R6", "index": 6, "title": "另一晚的刘看山", "shortTitle": "对照夜", "mode": "comparison",
-      "clue": "上周六同样在23点使用手机31分钟，但没有下午咖啡、次日无工作安排、环境也无明显异常；有效睡眠只减少8分钟。",
-      "objective": "比较两篇相反观点，指出削弱蓝光先生的证据和一个未控制变量。",
+      "clue": "同样的手机时长，为什么换了一晚，睡眠结果却不同？",
+      "objective": "比较两晚条件，判断手机证据被削弱到哪一步，并保留仍需解释的变量。",
       "focusFacts": [
-        {"label": "对照事实", "value": "同样使用手机 31 分钟", "tone": "blue"},
-        {"label": "结果差异", "value": "有效睡眠仅减少 8 分钟", "tone": "red"},
-        {"label": "推理价值", "value": "手机作为唯一主因被削弱", "tone": "green"}
+        {"label": "保持相同", "value": "23:00 使用手机 31 分钟", "tone": "blue"},
+        {"label": "同时改变", "value": "无下午咖啡 · 无次日工作安排 · 环境无异常", "tone": "red"},
+        {"label": "睡眠结果", "value": "对照夜有效睡眠仅减少 8 分钟", "tone": "green"}
       ],
       "evidenceRewards": ["E10", "E11"],
       "hook": "最后一次调查将针对你当前最怀疑的对象，同时寻找支持和反证。",
-      "fallbackAnswer": "手机两晚都出现过，但只有案发夜失踪45分钟。对照削弱了手机作为唯一主因的解释。"
+      "fallbackAnswer": "手机两晚都出现过，但只有案发夜失踪45分钟。对照削弱了手机作为唯一主因的解释。",
+      "comparisonRows": [
+        {"id": "phone", "label": "手机使用", "caseNight": "23:00，31 分钟", "controlNight": "23:00，31 分钟", "status": "相同", "same": true},
+        {"id": "coffee", "label": "下午咖啡", "caseNight": "16:40 大杯拿铁\n咖啡因含量未知", "controlNight": "无", "status": "不同", "same": false},
+        {"id": "pressure", "label": "工作压力", "caseNight": "汇报消息、担忧备忘、心率升高", "controlNight": "次日无工作安排", "status": "不同", "same": false},
+        {"id": "environment", "label": "夜间环境", "caseNight": "三次异常声音", "controlNight": "无明显异常", "status": "不同", "same": false},
+        {"id": "sleep", "label": "有效睡眠", "caseNight": "睡眠碎片化，减少 45 分钟", "controlNight": "仅减少 8 分钟", "status": "明显改善", "same": false}
+      ],
+      "comparisonJudgement": {
+        "question": "这组对照最直接支持哪项判断？",
+        "options": [
+          {"id": "weaken-phone", "label": "手机使用不能单独解释两晚睡眠差异", "correct": true},
+          {"id": "prove-coffee", "label": "可以证明咖啡因是唯一原因", "correct": false},
+          {"id": "prove-pressure", "label": "可以证明工作压力是唯一原因", "correct": false}
+        ],
+        "correctFeedback": "对照夜削弱了手机的唯一解释力。咖啡因与工作压力都应继续保留，但证据结构不同：咖啡因目前主要是一次订单和一般作用规律；压力则同时出现消息、担忧备忘和心率升高等个人线索。",
+        "incorrectFeedback": "自然对照同时改变了咖啡、工作压力和环境，不能据此把其中任何一个直接认定为唯一原因。"
+      }
     },
     {
       "id": "R7", "index": 7, "title": "针对当前嫌疑继续追查", "shortTitle": "定向复核", "mode": "targeted_search",
@@ -225,7 +242,7 @@
   "evidenceBlueprints": [
     {"id": "E01", "roundId": "R1", "title": "手机使用记录", "sourceType": "设备事实", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["BLUE"], "eligibleForFinal": true, "excerpt": "23:02-23:27手机持续活跃。"},
     {"id": "E02", "roundId": "R1", "title": "普通用户证词", "sourceType": "知乎回答", "reliability": "个人经验", "defaultRelation": "补充", "suspectIds": ["BLUE"], "eligibleForFinal": true},
-    {"id": "E03", "roundId": "R2", "title": "冷萃订单", "sourceType": "客观记录", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["COLD"], "eligibleForFinal": true, "excerpt": "16:40大杯冷萃，加浓。"},
+    {"id": "E03", "roundId": "R2", "title": "咖啡订单", "sourceType": "客观记录", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["COLD"], "eligibleForFinal": true, "excerpt": "16:40大杯拿铁。"},
     {"id": "E04", "roundId": "R2", "title": "专业建议", "sourceType": "医生建议", "reliability": "一般规律", "defaultRelation": "补充", "suspectIds": ["COLD"], "eligibleForFinal": true},
     {"id": "E05", "roundId": "R3", "title": "三次夜间记录", "sourceType": "设备估算", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["NOISE"], "eligibleForFinal": true, "excerpt": "三次疑似觉醒共约26分钟。"},
     {"id": "E06", "roundId": "R3", "title": "评论区证词", "sourceType": "评论", "reliability": "个人经验", "defaultRelation": "补充", "suspectIds": ["NOISE"], "eligibleForFinal": false},
@@ -233,7 +250,7 @@
     {"id": "E08", "roundId": "R4", "title": "压力神经环路研究", "sourceType": "动物机制研究", "reliability": "高可信研究", "defaultRelation": "支持", "suspectIds": ["PRESSURE"], "eligibleForFinal": true},
     {"id": "E09", "roundId": "R5", "title": "看山助手协查记录", "sourceType": "AI证据整理", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "COLD", "NOISE", "PRESSURE"], "eligibleForFinal": true},
     {"id": "E10", "roundId": "R6", "title": "对照夜记录", "sourceType": "对照事实", "reliability": "事实", "defaultRelation": "削弱", "suspectIds": ["BLUE"], "eligibleForFinal": true, "excerpt": "同样使用手机31分钟，有效睡眠只减少8分钟。"},
-    {"id": "E11", "roundId": "R6", "title": "观点对照", "sourceType": "观点比较", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "PRESSURE"], "eligibleForFinal": true},
+    {"id": "E11", "roundId": "R6", "title": "对照夜证据作用判断", "sourceType": "自然对照", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "PRESSURE"], "eligibleForFinal": true},
     {"id": "E12", "roundId": "R7", "title": "定向支持证据", "sourceType": "知乎回答", "reliability": "来源证词", "defaultRelation": "支持", "suspectIds": [], "eligibleForFinal": true},
     {"id": "E13", "roundId": "R7", "title": "定向反证", "sourceType": "知乎回答", "reliability": "来源限制", "defaultRelation": "削弱", "suspectIds": [], "eligibleForFinal": true}
   ],

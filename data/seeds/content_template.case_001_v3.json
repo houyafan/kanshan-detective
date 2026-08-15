@@ -15,6 +15,15 @@
     "nextRoundTransitionChecked": false,
     "notes": "检查四个预埋问题是否分别总结本人线索、作用阶段、时间线与证据缺口；不得替玩家锁定嫌疑人。"
   },
+  "comparisonNightReview": {
+    "roundId": "R6",
+    "samePhoneExposureChecked": false,
+    "changedConditionsChecked": false,
+    "sleepOutcomeChecked": false,
+    "naturalComparisonBoundaryChecked": false,
+    "judgementCopyApproved": false,
+    "notes": "结论只能削弱手机作为唯一主因，不能把咖啡因、工作压力或环境直接升级为唯一原因。"
+  },
   "sources": [
     {
       "roundId": "R2",
