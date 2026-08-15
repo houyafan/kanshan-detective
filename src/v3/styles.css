@@ -890,29 +890,112 @@ button.suspect-card { width: 100%; }
 }
 
 @media (min-width: 768px) {
-  .investigation-paper > header p { font-size: 12px; line-height: 1.7; }
-  .round-objective b { font-size: 11px; }
-  .round-objective p { font-size: 11px; line-height: 1.55; }
-  .search-results h3 { font-size: 15px; }
-  .search-results p { font-size: 11px; line-height: 1.65; }
-  .source-snapshot h3 { font-size: 16px; }
-  .source-snapshot > p { font-size: 12px; line-height: 1.75; }
-  .excerpt-options button, .comment-list button { font-size: 11px; line-height: 1.55; }
-  .study-sample, .boundary-question > header b { font-size: 11px; }
-  .professional-workbench .boundary-question > header b, .comments-workbench .boundary-question > header b { font-size: 14px; }
-  .research-judgement > header b { font-size: 13px; }
-  .professional-workbench .boundary-options button, .comments-workbench .boundary-options button { font-size: 10px; }
-  .professional-takeaways span, .professional-proof-limit p { font-size: 9px; }
-  .research-findings span, .research-mechanism p, .case-alignment article p, .case-alignment > footer p { font-size: 9px; }
-  .comment-link-list a > p, .comment-link-list a > strong { font-size: 9px; }
-  .assistant-boundary { font-size: 11px; }
-  .assistant-conversation > header p, .assistant-user-prompt, .assistant-analysis > p { font-size: 10px; }
-  .assistant-analysis-points p, .assistant-analysis > aside p { font-size: 9px; }
-  .assistant-prompt-list button b { font-size: 10px; }
-  .comparison-table-row p, .comparison-result p, .comparison-boundary p, .comparison-feedback p { font-size: 9px; }
-  .comparison-table-row strong, .comparison-options button { font-size: 9px; }
-  .review-condition-step button, .review-result-list article > p, .review-pair-step > label { font-size: 9px; }
-  .review-result-list h5 { font-size: 11px; }
+  .timeline-inner h2 { font-size: 16px; }
+  .timeline-inner > div b, .timeline-inner > section span { font-size: 11px; }
+  .timeline-inner > div strong { font-size: 13px; }
+  .timeline-inner > div small { font-size: 10px; line-height: 1.6; }
+  .timeline-inner > section p, .timeline-inner > a { font-size: 11px; }
+  .investigation-paper > header small { font-size: 10px; }
+  .investigation-paper > header h1 { font-size: 34px; }
+  .investigation-paper > header p { font-size: 13px; line-height: 1.75; }
+  .round-focus small { font-size: 10px; }
+  .round-focus b { font-size: 15px; line-height: 1.55; }
+  .round-objective b { font-size: 12px; }
+  .round-objective p { font-size: 12px; line-height: 1.65; }
+  .round-submit p { font-size: 11px; }
+  .evidence-notes > span, .evidence-notes b { font-size: 10px; }
+  .evidence-notes small { font-size: 11px; line-height: 1.45; }
+  .query-chips button, .search-results article > small { font-size: 10px; }
+  .search-workbench > form input, .search-workbench > form button { font-size: 12px; }
+  .search-results h3 { font-size: 16px; }
+  .search-results p { font-size: 12px; line-height: 1.7; }
+  .search-results footer a, .search-results footer > button, .search-results footer > div button { font-size: 11px; }
+  .searching-state p, .search-empty p { font-size: 11px; }
+  .review-step > header h3 { font-size: 15px; }
+  .review-step > header p, .review-search-step > header > span { font-size: 11px; line-height: 1.55; }
+  .review-condition-step button, .review-pair-step > label { font-size: 11px; }
+  .review-condition-step > small, .challenge-query-note { font-size: 10px; line-height: 1.5; }
+  .review-search-side h4 { font-size: 13px; }
+  .review-search-side > header small, .review-search-side > header > div:last-child span { font-size: 10px; }
+  .review-search-side > form input, .review-search-side > form button { font-size: 11px; }
+  .review-result-list article > small, .review-result-list article > em { font-size: 10px; }
+  .review-result-list h5 { font-size: 13px; }
+  .review-result-list article > p { font-size: 11px; line-height: 1.65; }
+  .review-result-list footer button, .review-result-list footer a { font-size: 10px; }
+  .review-search-empty p { font-size: 10px; }
+  .review-pair article small, .review-pair article span, .review-pair-rules span { font-size: 10px; }
+  .review-pair article b, .review-pair-step > label input { font-size: 11px; }
+  .source-snapshot header small, .source-snapshot header p { font-size: 10px; }
+  .source-snapshot h3 { font-size: 17px; }
+  .source-snapshot > p { font-size: 13px; line-height: 1.8; }
+  .professional-source header a { font-size: 11px; }
+  .source-section-label b { font-size: 13px; }
+  .source-section-label small, .comment-reading-heading small { font-size: 10px; }
+  .professional-takeaways span { font-size: 11px; line-height: 1.45; }
+  .professional-proof-limit b { font-size: 12px; }
+  .professional-proof-limit p { font-size: 11px; line-height: 1.65; }
+  .research-findings span, .research-mechanism p { font-size: 11px; line-height: 1.55; }
+  .research-mechanism b { font-size: 12px; }
+  .research-limit { font-size: 10px; line-height: 1.55; }
+  .case-alignment > header small { font-size: 10px; }
+  .case-alignment > header h3 { font-size: 15px; }
+  .case-alignment > header > span { font-size: 10px; }
+  .case-alignment article i { font-size: 10px; }
+  .case-alignment article b { font-size: 11px; }
+  .case-alignment article p, .case-alignment > footer p { font-size: 11px; line-height: 1.55; }
+  .case-alignment > footer b { font-size: 12px; }
+  .device-events > span small, .device-events > strong { font-size: 10px; line-height: 1.5; }
+  .device-events > span b { font-size: 11px; }
+  .device-events > strong b { font-size: 15px; }
+  .comment-reading-heading b { font-size: 12px; }
+  .comment-link-list a > span { font-size: 11px; }
+  .comment-link-list a > p, .comment-link-list a > strong { font-size: 11px; line-height: 1.55; }
+  .source-snapshot > footer, .study-sample { font-size: 11px; line-height: 1.55; }
+  .excerpt-options button, .comment-list button, .boundary-check button { font-size: 12px; line-height: 1.6; }
+  .comment-list button > span { font-size: 10px; }
+  .boundary-question > header small { font-size: 10px; }
+  .boundary-question > header b { font-size: 14px; }
+  .boundary-question > header p { font-size: 11px; line-height: 1.65; }
+  .professional-workbench .boundary-question > header b, .comments-workbench .boundary-question > header b { font-size: 16px; }
+  .research-judgement > header b { font-size: 15px; }
+  .boundary-options button { font-size: 12px; }
+  .boundary-feedback p { font-size: 11px; line-height: 1.65; }
+  .boundary-feedback p b { font-size: 12px; }
+  .hypothesis label, .hypothesis button, .viewpoint-select { font-size: 11px; }
+  .comparison-table-card h3, .comparison-meaning h3, .comparison-judgement h3 { font-size: 15px; }
+  .comparison-table-card > header span, .comparison-judgement h3 span { font-size: 10px; }
+  .comparison-table-head b { font-size: 11px; }
+  .comparison-table-row strong, .comparison-table-row p { font-size: 11px; line-height: 1.55; }
+  .comparison-table-row > span { font-size: 10px; }
+  .comparison-reasoning i { font-size: 10px; }
+  .comparison-reasoning b { font-size: 12px; line-height: 1.55; }
+  .comparison-result p, .comparison-boundary p, .comparison-feedback p { font-size: 11px; line-height: 1.65; }
+  .comparison-result b, .comparison-feedback b { font-size: 12px; }
+  .comparison-judgement > header p { font-size: 12px; line-height: 1.6; }
+  .comparison-options button { font-size: 11px; line-height: 1.55; }
+  .assistant-boundary { min-height: 48px; font-size: 12px; }
+  .assistant-conversation > header h2 span { font-size: 10px; }
+  .assistant-conversation > header p, .assistant-user-prompt, .assistant-analysis > p { font-size: 12px; line-height: 1.65; }
+  .assistant-user-prompt i { font-size: 9px; }
+  .assistant-analysis > header small { font-size: 10px; }
+  .assistant-analysis > header h3 { font-size: 14px; }
+  .assistant-analysis-points { grid-template-columns: 1fr; }
+  .assistant-analysis-points > div { grid-template-columns: 105px 1fr; }
+  .assistant-analysis-points b, .assistant-analysis-points p { font-size: 11px; line-height: 1.6; }
+  .assistant-analysis > aside p { font-size: 11px; line-height: 1.65; }
+  .assistant-analysis > aside b { font-size: 12px; }
+  .assistant-empty p, .assistant-angle-panel > header p { font-size: 11px; }
+  .assistant-conversation > footer { font-size: 10px; }
+  .assistant-angle-panel > header h3 { font-size: 16px; }
+  .assistant-prompt-list button b { font-size: 12px; line-height: 1.5; }
+  .assistant-prompt-list button small { font-size: 10px; }
+  .assistant-progress > span { font-size: 11px; }
+  .assistant-citations summary, .assistant-citations a b { font-size: 11px; }
+  .assistant-citations a small { font-size: 10px; }
+  .vote-paper h2 { font-size: 15px; }
+  .vote-evidence button > span, .vote-evidence button b { font-size: 11px; }
+  .vote-evidence button small { font-size: 10px; }
+  .vote-options label, .vote-options select, .vote-options label button { font-size: 12px; }
 }
 
 @media (max-width: 767px) {
@@ -1032,26 +1115,46 @@ button.suspect-card { width: 100%; }
   .round-timeline.open .timeline-inner { display: block; }
   .investigation-paper { padding: 20px 14px; box-shadow: none; border: 0; }
   .investigation-paper > header h1 { font-size: 26px; }
-  .investigation-paper > header p { font-size: 9px; }
+  .investigation-paper > header p { font-size: 12px; line-height: 1.7; }
   .investigation-paper > header > span { display: none; }
   .round-focus { grid-template-columns: 1fr; margin: 12px 0; }
   .round-focus > div { min-height: 51px; padding: 8px 11px 8px 17px; border-right: 0; border-bottom: 1px solid #d6c9ae; }
   .round-focus > div:last-child { border-bottom: 0; }
   .round-focus > div::before { top: 8px; bottom: 8px; width: 3px; }
-  .round-focus b { font-size: 11px; }
+  .round-focus small { font-size: 10px; }
+  .round-focus b { font-size: 14px; }
   .round-objective { margin-block: 12px; }
+  .round-objective b { font-size: 12px; }
+  .round-objective p { font-size: 12px; line-height: 1.6; }
   .round-submit { position: fixed; z-index: 45; left: 0; right: 0; bottom: 0; min-height: 68px; margin: 0; padding: 9px 12px calc(9px + env(safe-area-inset-bottom)); background: #f2e9d7; border-top: 1px solid #aa9977; box-shadow: 0 -8px 20px rgba(0,0,0,.18); }
   .round-submit p { display: none; }
   .round-submit .v3-primary { width: 100%; }
   .round-side { display: none; }
   .search-workbench > form { grid-template-columns: 36px 1fr 76px; }
   .query-chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 3px; }
-  .query-chips button { flex: 0 0 auto; }
+  .query-chips button { flex: 0 0 auto; font-size: 11px; }
+  .search-workbench > form input, .search-workbench > form button { font-size: 12px; }
+  .search-results article > small { font-size: 10px; }
+  .search-results h3 { font-size: 16px; }
+  .search-results p { font-size: 12px; line-height: 1.65; }
+  .search-results footer a, .search-results footer > button, .search-results footer > div button { font-size: 11px; }
   .search-results footer { align-items: flex-end; }
   .search-results footer > div { flex-direction: column; }
   .boundary-check { grid-template-columns: 1fr; }
   .boundary-options { grid-template-columns: 1fr; }
   .source-snapshot { padding: 14px; }
+  .source-snapshot header small, .source-snapshot header p { font-size: 10px; }
+  .source-snapshot h3 { font-size: 16px; }
+  .source-snapshot > p { font-size: 12px; line-height: 1.7; }
+  .source-section-label b, .comment-reading-heading b { font-size: 12px; }
+  .source-section-label small, .comment-reading-heading small { font-size: 10px; }
+  .professional-takeaways span, .professional-proof-limit p, .research-findings span, .research-mechanism p, .case-alignment article p, .case-alignment > footer p { font-size: 11px; line-height: 1.55; }
+  .research-limit, .device-events > span small, .device-events > strong { font-size: 10px; }
+  .comment-link-list a > span, .comment-link-list a > p, .comment-link-list a > strong { font-size: 11px; }
+  .source-snapshot > footer, .study-sample, .excerpt-options button, .comment-list button, .boundary-check button, .boundary-options button { font-size: 12px; line-height: 1.55; }
+  .boundary-question > header small { font-size: 10px; }
+  .boundary-question > header b { font-size: 14px; }
+  .boundary-question > header p, .boundary-feedback p { font-size: 11px; line-height: 1.6; }
   .professional-workbench, .comments-workbench, .research-workbench { grid-template-columns: 1fr; }
   .research-judgement { grid-column: auto; }
   .device-events { grid-template-columns: 1fr 1fr; }
@@ -1063,12 +1166,19 @@ button.suspect-card { width: 100%; }
   .assistant-conversation > header { grid-template-columns: 66px 1fr; }
   .assistant-conversation > header img { width: 66px; height: 74px; }
   .assistant-conversation > header h2 { font-size: 17px; }
+  .assistant-boundary, .assistant-conversation > header p, .assistant-user-prompt, .assistant-analysis > p { font-size: 12px; line-height: 1.6; }
+  .assistant-analysis > header small, .assistant-prompt-list button small, .assistant-citations a small { font-size: 10px; }
+  .assistant-analysis > header h3 { font-size: 14px; }
+  .assistant-analysis-points b, .assistant-analysis-points p, .assistant-analysis > aside p, .assistant-angle-panel > header p, .assistant-prompt-list button b, .assistant-citations summary, .assistant-citations a b { font-size: 11px; line-height: 1.55; }
   .assistant-user-prompt { max-width: 94%; }
   .assistant-analysis-points > div { grid-template-columns: 75px 1fr; }
   .assistant-empty { min-height: 150px; }
   .comparison-main { grid-template-columns: 1fr; }
   .comparison-table { overflow-x: auto; }
   .comparison-table-head, .comparison-table-row { min-width: 620px; }
+  .comparison-table-head b, .comparison-table-row strong, .comparison-table-row p, .comparison-options button, .comparison-result p, .comparison-boundary p, .comparison-feedback p { font-size: 11px; line-height: 1.55; }
+  .comparison-table-row > span, .comparison-table-card > header span, .comparison-judgement h3 span { font-size: 10px; }
+  .comparison-judgement > header p { font-size: 12px; }
   .comparison-options { grid-template-columns: 1fr; }
   .review-condition-step > div { grid-template-columns: 1fr; margin-left: 0; }
   .review-condition-step > small { margin-left: 0; }
@@ -1077,8 +1187,16 @@ button.suspect-card { width: 100%; }
   .review-search-step > header > span { width: 100%; margin: 5px 0 0 33px; }
   .review-pair { grid-template-columns: 1fr; }
   .review-pair-step > label { grid-template-columns: 1fr; }
+  .review-step > header h3 { font-size: 15px; }
+  .review-step > header p, .review-search-step > header > span, .review-condition-step button, .review-result-list article > p, .review-pair-step > label { font-size: 11px; line-height: 1.55; }
+  .review-condition-step > small, .review-search-side > header small, .review-result-list article > small, .review-result-list article > em, .review-pair article small, .review-pair article span, .review-pair-rules span { font-size: 10px; }
+  .review-result-list h5, .review-search-side h4 { font-size: 13px; }
+  .review-search-side > form input, .review-search-side > form button, .review-result-list footer button, .review-result-list footer a, .review-pair article b, .review-pair-step > label input { font-size: 11px; }
   .vote-stage:not(.initial) .suspect-card.compact .suspect-portrait { height: 82px; }
   .vote-evidence { max-height: 270px; grid-template-columns: 1fr; }
+  .vote-paper h2 { font-size: 15px; }
+  .vote-evidence button > span, .vote-evidence button b, .vote-options label, .vote-options select, .vote-options label button { font-size: 12px; }
+  .vote-evidence button small { font-size: 10px; }
   .vote-options { grid-template-columns: 1fr; }
   .vote-options label { grid-template-columns: 60px 1fr; }
   .recap-stage { min-height: calc(100vh - 58px); display: flex; flex-direction: column-reverse; justify-content: center; gap: 0; padding: 22px 16px calc(26px + env(safe-area-inset-bottom)); }
