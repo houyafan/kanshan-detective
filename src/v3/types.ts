@@ -135,6 +135,16 @@ export interface AssistantTurn {
   citationIds: string[];
 }
 
+export interface ReportRecommendation {
+  id: string;
+  title: string;
+  topic?: string;
+  author?: string;
+  summary?: string;
+  reason: string;
+  url: string;
+}
+
 export interface V3Report {
   reportId: string;
   grade: string;
@@ -162,14 +172,7 @@ export interface V3Report {
   fallbackUsed: boolean;
   comment: string;
   closingMessage: string;
-  recommendations: Array<{
-    id: string;
-    title: string;
-    author: string;
-    summary: string;
-    reason: string;
-    url: string;
-  }>;
+  recommendations: ReportRecommendation[];
   shareDraft: string;
 }
 
@@ -188,7 +191,12 @@ export interface V3Case {
   rounds: RoundConfig[];
   sources: SourceSnapshot[];
   evidenceBlueprints: Array<Record<string, unknown>>;
-  report: { shareTemplate: string; comment: string };
+  report: {
+    shareTemplate: string;
+    comment: string;
+    closingMessage: string;
+    recommendations: ReportRecommendation[];
+  };
 }
 
 export interface V3Run {

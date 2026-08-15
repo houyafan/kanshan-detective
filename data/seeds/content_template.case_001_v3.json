@@ -38,6 +38,7 @@
     "sGradeHardConditionsChecked": false,
     "gradeReasonCopyChecked": false,
     "recommendationLinksChecked": false,
+    "approvedRecommendationCount": 5,
     "kanshanClosingCopyChecked": false,
     "notes": "评级仅使用案件重建、证据质量、反证意识和推理边界；改票次数与调查耗时不得计分。"
   },
