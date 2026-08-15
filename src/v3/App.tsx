@@ -16,6 +16,7 @@ import {
   History,
   Menu,
   MessageCircle,
+  Music2,
   Puzzle,
   RotateCcw,
   Search,
@@ -23,6 +24,7 @@ import {
   Smartphone,
   Sparkles,
   Volume2,
+  VolumeX,
   X
 } from "lucide-react";
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
@@ -34,6 +36,89 @@ const poseSearch = "/assets/kanshan/kanshan-pose-search.png";
 const poseThink = "/assets/kanshan/kanshan-pose-think.png";
 const poseRead = "/assets/kanshan/kanshan-pose-read.png";
 const poseClose = "/assets/kanshan/kanshan-pose-close.png";
+const themeMusic = "/assets/audio/kanshan-detective-theme.mp3";
+
+interface AudioContextValue {
+  enabled: boolean;
+  playing: boolean;
+  toggle: () => void;
+}
+
+const AudioContext = createContext<AudioContextValue | null>(null);
+
+function readPreference(key: string) {
+  try { return localStorage.getItem(key); } catch { return null; }
+}
+
+function savePreference(key: string, value: string) {
+  try { localStorage.setItem(key, value); } catch { /* Preference persistence is optional. */ }
+}
+
+function useAudio() {
+  const value = useContext(AudioContext);
+  if (!value) throw new Error("AudioProvider missing");
+  return value;
+}
+
+function AudioProvider({ children }: { children: ReactNode }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [enabled, setEnabled] = useState(() => readPreference("kanshan_audio_enabled") !== "off");
+  const [playing, setPlaying] = useState(false);
+  const [promptOpen, setPromptOpen] = useState(() => readPreference("kanshan_audio_prompt_seen") !== "true");
+
+  async function start() {
+    setEnabled(true);
+    savePreference("kanshan_audio_enabled", "on");
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.24;
+    try { await audio.play(); setPlaying(true); } catch { setPlaying(false); }
+  }
+
+  function stop() {
+    setEnabled(false);
+    savePreference("kanshan_audio_enabled", "off");
+    audioRef.current?.pause();
+    setPlaying(false);
+  }
+
+  function toggle() {
+    if (enabled && playing) stop();
+    else void start();
+  }
+
+  function finishPrompt(withSound: boolean) {
+    savePreference("kanshan_audio_prompt_seen", "true");
+    setPromptOpen(false);
+    if (withSound) void start();
+    else stop();
+  }
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.volume = 0.24;
+    if (!enabled) { audio.pause(); return; }
+    if (promptOpen) return;
+    const unlock = () => { void audio.play().catch(() => setPlaying(false)); };
+    void audio.play().catch(() => setPlaying(false));
+    document.addEventListener("pointerdown", unlock, { once: true });
+    return () => document.removeEventListener("pointerdown", unlock);
+  }, [enabled, promptOpen]);
+
+  const value = useMemo(() => ({ enabled, playing, toggle }), [enabled, playing]);
+  return <AudioContext.Provider value={value}>
+    <audio ref={audioRef} src={themeMusic} loop preload="auto" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+    {children}
+    {promptOpen && <div className="sound-prompt-backdrop"><section className="sound-prompt" role="dialog" aria-modal="true" aria-labelledby="sound-prompt-title"><div><Music2 /></div><small>沉浸调查模式</small><h2 id="sound-prompt-title">开启声音，体验更佳</h2><p>建议打开背景音乐，进入看山侦探事务所的调查氛围。</p><button className="v3-primary" onClick={() => finishPrompt(true)}><Volume2 />开启声音</button><button className="v3-text-button" onClick={() => finishPrompt(false)}>暂不开启</button></section></div>}
+  </AudioContext.Provider>;
+}
+
+function SoundToggle() {
+  const { enabled, playing, toggle } = useAudio();
+  const status = enabled ? (playing ? "播放中" : "待播放") : "已关闭";
+  return <button className={`sound-toggle ${enabled ? "enabled" : ""} ${enabled && !playing ? "waiting" : ""}`} onClick={toggle} aria-pressed={enabled} title={enabled ? "关闭背景音乐" : "开启背景音乐"}>{enabled ? <Volume2 /> : <VolumeX />}<span>声音</span><i>{status}</i></button>;
+}
 
 interface ContextValue {
   caseData: V3Case | null;
@@ -137,6 +222,7 @@ function CaseHeader({ round, backTo = "/", board = true }: { round?: RoundConfig
       <span><History />投票 <b>{run?.votes.length || 0}</b></span>
       <i><Check />已保存</i>
       {board && run && <Link to="/board" title="查看案件板"><Puzzle /></Link>}
+      <SoundToggle />
     </div>
   </header>;
 }
@@ -170,7 +256,7 @@ function HomePage() {
   }
 
   return <main className="v3-home">
-    <header><div className="v3-wordmark large"><span>看山</span><strong>侦探事务所</strong><small>KANSHAN DETECTIVE AGENCY</small></div><div className="open-light"><i /> 今夜营业中</div></header>
+    <header><div className="v3-wordmark large"><span>看山</span><strong>侦探事务所</strong><small>KANSHAN DETECTIVE AGENCY</small></div><div className="home-header-actions"><div className="open-light"><i /> 今夜营业中</div><SoundToggle /></div></header>
     <section className="v3-home-stage">
       <div className="v3-home-copy"><small>全新案件 / 7轮调查</small><h1>有人偷走了<br /><em>45分钟。</em></h1><p>每轮证据都可能改变你的判断。先别急着猜，真正的侦探会把每个结论带回来源。</p><div><span><Clock3 />{caseData.duration}</span><span><Search />知乎真实搜索</span><span><Bot />知乎直答协查</span></div></div>
       <div className="v3-home-focus" />
@@ -451,5 +537,5 @@ function V3Routes() {
 }
 
 export function V3App() {
-  return <V3Provider><V3Routes /></V3Provider>;
+  return <AudioProvider><V3Provider><V3Routes /></V3Provider></AudioProvider>;
 }
