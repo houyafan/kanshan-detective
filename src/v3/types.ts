@@ -196,6 +196,7 @@ export interface V3Case {
     shareTemplate: string;
     comment: string;
     closingMessage: string;
+    closingStatement?: string[];
     recommendations: ReportRecommendation[];
   };
 }

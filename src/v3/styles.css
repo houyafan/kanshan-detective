@@ -858,6 +858,21 @@ button.suspect-card { width: 100%; }
 .report-recommendations article a svg { width: 14px; }
 .report-recommendations > footer { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: #7c7d75; font-size: 7px; }
 .report-recommendations > footer svg { width: 14px; }
+.report-kanshan-closing { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); margin-top: 22px; padding: 24px 28px 20px; overflow: hidden; color: #e6edeb; background: #142c36; border: 1px solid #456570; border-left: 4px solid var(--gold); box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); }
+.report-kanshan-closing::after { content: "CASE CLOSED"; position: absolute; right: -17px; top: 55px; color: rgba(239,182,72,.08); font: 900 58px/1 Georgia, serif; transform: rotate(90deg); pointer-events: none; }
+.report-kanshan-closing > header { position: relative; z-index: 1; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-bottom: 15px; border-bottom: 1px solid #45616a; }
+.report-kanshan-closing > header small { color: #e7b95f; font: 8px ui-monospace, monospace; }
+.report-kanshan-closing > header h2 { margin: 5px 0 0; color: white; font: 900 25px STKaiti, KaiTi, serif; }
+.report-kanshan-closing > header > span { display: flex; align-items: center; gap: 6px; padding: 6px 9px; color: #dbe7e4; border: 1px solid #5c7780; font-size: 9px; font-weight: 800; }
+.report-kanshan-closing > header svg { width: 15px; color: #efb648; }
+.report-kanshan-closing > img { display: none; }
+.report-kanshan-closing > div { position: relative; z-index: 1; max-width: 880px; padding-top: 9px; }
+.report-kanshan-closing > div p { margin: 13px 0; color: #d4deda; font-size: 12px; line-height: 1.85; }
+.report-kanshan-closing > div p:first-child { color: white; font: 18px/1.7 STKaiti, KaiTi, serif; }
+.report-kanshan-closing > div blockquote { margin: 17px 0; padding: 14px 17px; color: #fff2ce; background: rgba(5,13,17,.35); border-left: 3px solid #efb648; font: 17px/1.85 STKaiti, KaiTi, serif; white-space: pre-line; }
+.report-kanshan-closing > footer { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; margin-top: 6px; padding-top: 14px; border-top: 1px solid #405b64; }
+.report-kanshan-closing > footer span { width: 36px; height: 36px; display: grid; place-items: center; color: #f2d28f; border: 2px solid #c88e43; border-radius: 50%; font: 17px STKaiti, KaiTi, serif; transform: rotate(-8deg); }
+.report-kanshan-closing > footer b { color: #91a8aa; font: 9px ui-monospace, monospace; }
 .report-fallback { display: flex; align-items: center; gap: 7px; margin-top: 14px; padding: 9px; color: #845d1e; background: #f0ddb3; font-size: 8px; }
 .report-fallback svg { width: 16px; }
 .report-paper > blockquote { margin: 20px 0; padding: 15px 18px; color: #d9e1df; background: #18303a; font: 15px/1.7 STKaiti, KaiTi, serif; }
@@ -887,6 +902,10 @@ button.suspect-card { width: 100%; }
   .report-page > main > aside { display: none; }
   .report-summary { grid-template-columns: 1fr; }
   .report-grade-reasons { border-top: 1px dashed #6b8189; border-left: 0; }
+  .report-kanshan-closing { grid-template-columns: 120px minmax(0, 1fr); column-gap: 18px; }
+  .report-kanshan-closing > header, .report-kanshan-closing > footer { grid-column: 1 / -1; }
+  .report-kanshan-closing > img { width: 120px; height: 175px; display: block; align-self: start; object-fit: contain; }
+  .report-kanshan-closing > div { padding-top: 8px; }
 }
 
 @media (min-width: 768px) {
@@ -1242,6 +1261,15 @@ button.suspect-card { width: 100%; }
   .report-evidence h2 { grid-column: 1; }
   .report-recommendations > div { grid-template-columns: 1fr; }
   .report-recommendations article:nth-child(n) { grid-column: auto; }
+  .report-kanshan-closing { display: block; padding: 21px 17px 17px; }
+  .report-kanshan-closing::after { display: none; }
+  .report-kanshan-closing > header h2 { font-size: 22px; }
+  .report-kanshan-closing > header > span { font-size: 8px; }
+  .report-kanshan-closing > img { width: 105px; height: 135px; display: block; float: right; margin: 7px 0 5px 12px; }
+  .report-kanshan-closing > div p { font-size: 12px; line-height: 1.8; }
+  .report-kanshan-closing > div p:first-child { font-size: 17px; }
+  .report-kanshan-closing > div blockquote { padding: 12px 13px; font-size: 16px; }
+  .report-kanshan-closing > footer { clear: both; }
   .report-paper > footer { display: grid; }
   .report-page > main > aside { display: none; }
 }
