@@ -51,6 +51,8 @@ export interface SourceSnapshot {
     url: string;
     tone: "experience" | "challenge" | "alternative";
   }>;
+  caseAlignment?: Array<{ label: string; value: string }>;
+  caseConclusion?: string;
   limitations: string;
   sample?: string;
 }

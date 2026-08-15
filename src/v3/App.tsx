@@ -302,8 +302,8 @@ function RoundTimeline({ round }: { round: RoundConfig }) {
   return <aside className={`round-timeline ${open ? "open" : ""}`}><button className="timeline-toggle" onClick={() => setOpen(!open)}><Menu />案件时间线</button><div className="timeline-inner"><h2>案件线索时间轴</h2>{caseData?.timeline.filter((item) => item.round <= round.index).map((item) => <div key={`${item.time}-${item.title}`} className={item.round === round.index ? "current" : ""}><b>{item.time}</b><strong>{item.title}</strong><small>{item.detail}</small></div>)}<section><span>待解决问题</span><p>{round.objective}</p></section><Link to="/board"><Puzzle />查看案件总览</Link></div></aside>;
 }
 
-function SourceCard({ source, children, professional = false, hideHeaderLink = false }: { source: SourceSnapshot; children?: ReactNode; professional?: boolean; hideHeaderLink?: boolean }) {
-  return <article className={`source-snapshot ${professional ? "professional-source" : ""}`}><header><div><small>{source.authorType}</small><h3>{source.title}</h3><p>{source.author}</p></div>{!hideHeaderLink && <a href={source.url} target="_blank" rel="noreferrer" title="查看知乎原文">{professional && <span>查看原文</span>}<ExternalLink /></a>}</header>{professional && <div className="source-section-label"><b>证据摘要</b><small>只读 · 不计分</small></div>}<p>{source.body}</p>{source.sample && <div className="study-sample"><BookOpen />研究对象：{source.sample}</div>}{children}{!professional && <footer><ShieldCheck />限制：{source.limitations}</footer>}</article>;
+function SourceCard({ source, children, professional = false, hideHeaderLink = false, sectionLabel = "证据摘要" }: { source: SourceSnapshot; children?: ReactNode; professional?: boolean; hideHeaderLink?: boolean; sectionLabel?: string }) {
+  return <article className={`source-snapshot ${professional ? "professional-source" : ""}`}><header><div><small>{source.authorType}</small><h3>{source.title}</h3><p>{source.author}</p></div>{!hideHeaderLink && <a href={source.url} target="_blank" rel="noreferrer" title="查看知乎原文">{professional && <span>查看原文</span>}<ExternalLink /></a>}</header>{professional && <div className="source-section-label"><b>{sectionLabel}</b><small>只读 · 不计分</small></div>}<p>{source.body}</p>{source.sample && <div className="study-sample"><BookOpen />研究对象：{source.sample}</div>}{children}{!professional && <footer><ShieldCheck />限制：{source.limitations}</footer>}</article>;
 }
 
 interface WorkbenchResult { ready: boolean; payload: Record<string, unknown> }
@@ -360,8 +360,6 @@ function SearchWorkbench({ round, onState }: { round: RoundConfig; onState: (val
 function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
   const { caseData } = useV3();
   const sources = caseData?.sources.filter((item) => item.roundId === round.id) || [];
-  const [choice, setChoice] = useState("");
-  const [checked, setChecked] = useState<string[]>([]);
   const [boundaryAnswer, setBoundaryAnswer] = useState("");
   const [viewpoint, setViewpoint] = useState("");
   const [variable, setVariable] = useState("");
@@ -376,27 +374,27 @@ function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (v
       ready = boundaryAnswer === "cannot";
       const source = sources[0]; evidence = { E06: { excerpt: "设备记录与评论区经验只能提供时间相关线索，不能直接证明声音导致觉醒。", sourceId: source?.id, sourceTitle: source?.title, sourceUrl: source?.url, limitations: source?.limitations } };
     } else if (round.mode === "research") {
-      ready = Boolean(choice && checked.includes("source") && checked.includes("limit"));
-      const source = sources[0]; evidence = { E08: { excerpt: choice, sourceId: source?.id, sourceTitle: source?.title, sourceUrl: source?.url, limitations: source?.limitations } };
+      ready = boundaryAnswer === "strengthens";
+      const source = sources[0]; evidence = { E08: { excerpt: source?.body, relation: "支持", sourceId: source?.id, sourceTitle: source?.title, sourceUrl: source?.url, limitations: source?.limitations } };
     } else if (round.mode === "comparison") {
       ready = Boolean(viewpoint && variable);
       const source = sources.find((item) => item.id === viewpoint); evidence = { E11: { excerpt: source?.body, sourceId: source?.id, sourceTitle: source?.title, sourceUrl: source?.url, limitations: source?.limitations } };
     }
-    onState({ ready, payload: { choice, checked, boundaryAnswer, viewpoint, variable, evidence } });
-  }, [choice, checked, boundaryAnswer, viewpoint, variable]);
+    onState({ ready, payload: { boundaryAnswer, viewpoint, variable, evidence } });
+  }, [boundaryAnswer, viewpoint, variable]);
 
-  function toggle(value: string) { setChecked((items) => items.includes(value) ? items.filter((item) => item !== value) : [...items, value]); }
-  const workbenchClass = round.mode === "professional" ? "professional-workbench" : round.mode === "comments" ? "comments-workbench" : "";
+  const workbenchClass = round.mode === "professional" ? "professional-workbench" : round.mode === "comments" ? "comments-workbench" : round.mode === "research" ? "research-workbench" : "";
   return <section className={`snapshot-workbench ${workbenchClass}`}>
-    {sources.map((source) => <SourceCard key={source.id} source={source} professional={round.mode === "professional"} hideHeaderLink={round.mode === "comments"}>
+    {sources.map((source) => <SourceCard key={source.id} source={source} professional={round.mode === "professional" || round.mode === "research"} hideHeaderLink={round.mode === "comments"} sectionLabel={round.mode === "research" ? "研究摘要" : "证据摘要"}>
       {round.mode === "professional" && <><div className="professional-takeaways">{source.excerpts?.map((excerpt) => <span key={excerpt}><CheckCircle2 />{excerpt}</span>)}</div><div className="professional-proof-limit"><b>这篇内容不能证明</b><p>{source.limitations}</p></div></>}
       {round.mode === "comments" && <><div className="device-events">{["00:17", "02:48", "05:12"].map((time) => <span key={time}><b>{time}</b><small><Volume2 />异常声音 · 疑似觉醒</small></span>)}<strong>累计约<br /><b>26 分钟</b></strong></div><div className="comment-reading-heading"><MessageCircle /><b>评论区阅读</b><small>只读 · 不计分</small></div><div className="comment-link-list">{source.commentLinks?.map((link) => <a key={link.id} href={link.url} target="_blank" rel="noreferrer" data-tone={link.tone}><span>{link.label}</span><p>{link.focus}</p><strong>阅读评论区 <ExternalLink /></strong></a>)}</div></>}
-      {round.mode === "research" ? <div className="excerpt-options">{source.excerpts?.map((excerpt) => <button key={excerpt} className={choice === excerpt ? "selected" : ""} onClick={() => setChoice(excerpt)}><CheckCircle2 />{excerpt}</button>)}</div> : null}
+      {round.mode === "research" && <><div className="research-findings">{source.excerpts?.map((excerpt) => <span key={excerpt}><CheckCircle2 />{excerpt}</span>)}</div><div className="research-mechanism"><BookOpen /><p><b>研究机制</b>持续威胁可通过 mSTN-CRH-LGP 神经环路改变 REM 睡眠及觉醒反应。</p></div><div className="research-limit"><ShieldCheck />{source.limitations}</div></>}
       {round.mode === "comparison" && <button className={`viewpoint-select ${viewpoint === source.id ? "selected" : ""}`} onClick={() => setViewpoint(source.id)}>{viewpoint === source.id ? <CheckCircle2 /> : <i />} 这篇观点更能解释两晚差异</button>}
     </SourceCard>)}
+    {round.mode === "research" && <section className="case-alignment"><header><div><small>与本案对照</small><h3>研究机制和本案表现是否一致？</h3></div><span>线索方向 · 一致</span></header><div>{sources[0]?.caseAlignment?.map((item, index) => <article key={item.label}><i>{index + 1}</i><b>{item.label}</b><p>{item.value}</p></article>)}</div><footer><CheckCircle2 /><p><b>研究机制与本案表现相呼应</b>{sources[0]?.caseConclusion}</p></footer></section>}
     {round.mode === "professional" && <div className="boundary-question"><header><small>因果边界判断</small><b>仅凭这篇内容，能否认定刘看山当晚的睡眠问题由咖啡导致？</b><p>请选择一个答案。</p></header><div className="boundary-options"><button className={boundaryAnswer === "can" ? "selected incorrect" : ""} onClick={() => setBoundaryAnswer("can")}><span />能直接证明</button><button className={boundaryAnswer === "cannot" ? "selected correct" : ""} onClick={() => setBoundaryAnswer("cannot")}><span />不能直接证明</button></div>{boundaryAnswer && <div className={`boundary-feedback ${boundaryAnswer === "cannot" ? "correct" : "incorrect"}`}>{boundaryAnswer === "cannot" ? <CheckCircle2 /> : <X />}<p><b>{boundaryAnswer === "cannot" ? "判断正确" : "还不能这样下结论"}</b>{boundaryAnswer === "cannot" ? "文章能够支持一般规律，但缺少刘看山当晚的个体数据，不能确认个体因果。" : "文章未提供刘看山当晚的摄入量、摄入时间、代谢特征和客观睡眠监测。"}</p></div>}</div>}
     {round.mode === "comments" && <div className="boundary-question"><header><small>因果边界判断</small><b>仅凭设备记录和这些评论，能否认定声音导致刘看山醒来？</b><p>请选择一个答案。</p></header><div className="boundary-options"><button className={boundaryAnswer === "can" ? "selected incorrect" : ""} onClick={() => setBoundaryAnswer("can")}><span />能直接证明</button><button className={boundaryAnswer === "cannot" ? "selected correct" : ""} onClick={() => setBoundaryAnswer("cannot")}><span />不能直接证明</button></div>{boundaryAnswer && <div className={`boundary-feedback ${boundaryAnswer === "cannot" ? "correct" : "incorrect"}`}>{boundaryAnswer === "cannot" ? <CheckCircle2 /> : <X />}<p><b>{boundaryAnswer === "cannot" ? "判断正确" : "还不能这样下结论"}</b>{boundaryAnswer === "cannot" ? "现有材料只能说明声音与疑似觉醒在时间上接近；缺少明确先后关系，不能确认个体因果。" : "评论经验和设备同一时段记录，都不能排除醒来后发声或其他环境原因。"}</p></div>}</div>}
-    {round.mode === "research" && <div className="boundary-check"><button className={checked.includes("source") ? "selected" : ""} onClick={() => toggle("source")}><Check />已查看研究来源与样本</button><button className={checked.includes("limit") ? "selected" : ""} onClick={() => toggle("limit")}><Check />相关性不能直接证明本案因果</button></div>}
+    {round.mode === "research" && <div className="boundary-question research-judgement"><header><small>证据作用判断</small><b>这篇动物机制研究在本案中意味着什么？</b><p>请选择一个答案。</p></header><div className="boundary-options"><button className={boundaryAnswer === "sole" ? "selected incorrect" : ""} onClick={() => setBoundaryAnswer("sole")}><span />可以单独定案：工作压力是唯一原因</button><button className={boundaryAnswer === "strengthens" ? "selected correct" : ""} onClick={() => setBoundaryAnswer("strengthens")}><span />不能单独定案，但显著增强压力假设</button></div>{boundaryAnswer && <div className={`boundary-feedback ${boundaryAnswer === "strengthens" ? "correct" : "incorrect"}`}>{boundaryAnswer === "strengthens" ? <CheckCircle2 /> : <X />}<p><b>{boundaryAnswer === "strengthens" ? "判断正确" : "可信研究也不能越过个体边界"}</b>{boundaryAnswer === "strengthens" ? "研究揭示持续威胁影响 REM 睡眠与觉醒的神经机制；本案的压力事件、担忧记录、心率升高和睡眠片段化方向一致，因此压力假设被显著增强。" : "这项研究以小鼠为模式动物，不能排除咖啡因、环境声音等其他变量，也不能单独完成个体定因。"}</p></div>}</div>}
     {round.mode === "comparison" && <div className="hypothesis"><label>指出一个仍未控制的变量</label>{["当天情绪", "实际入睡时间", "环境温度"].map((item) => <button key={item} className={variable === item ? "selected" : ""} onClick={() => setVariable(item)}>{item}</button>)}</div>}
   </section>;
 }
@@ -434,6 +432,14 @@ function RoundPage() {
   const round = caseData.rounds.find((item) => item.id === roundId);
   if (!round) return <Navigate to={routeFor(run)} replace />;
   if (run.currentRound !== round.index && run.status !== "CLOSED") return <Navigate to={routeFor(run)} replace />;
+  const isBoundaryRound = ["professional", "comments", "research"].includes(round.mode);
+  const sideHint = round.mode === "professional"
+    ? "读懂来源，也要看清它不能证明什么。"
+    : round.mode === "comments"
+      ? "评论提供经验与线索，不替代因果证据。"
+      : round.mode === "research"
+        ? "高可信研究增强假设，但不能替个体定案。"
+        : "打开来源，标记一条真正能解释时间的证词。";
 
   async function complete() {
     if (!workbench.ready) return;
@@ -445,7 +451,7 @@ function RoundPage() {
     finally { setSubmitting(false); }
   }
 
-  return <div className="v3-page round-page"><CaseHeader round={round} /><main className="round-layout"><RoundTimeline round={round} /><section className="investigation-paper"><header><div><small>ROUND {round.index} / INVESTIGATION</small><h1>{round.title}</h1><p>{round.clue}</p></div><span>{round.shortTitle}</span></header><RoundFocus round={round} /><div className="round-objective"><CheckCircle2 /><div><b>本轮任务</b><p>{round.objective}</p></div></div>{round.mode === "search" || round.mode === "targeted_search" ? <SearchWorkbench round={round} onState={setWorkbench} /> : round.mode === "assistant" ? <AssistantWorkbench onState={setWorkbench} /> : <SnapshotWorkbench round={round} onState={setWorkbench} />}<footer className="round-submit"><p>{workbench.ready ? <><CheckCircle2 />取证条件已满足，可以进入本轮投票。</> : <><ShieldCheck />完成页面中的标记和边界确认后才能投票。</>}</p><button className="v3-primary" disabled={!workbench.ready || submitting} onClick={complete}>{submitting ? "正在归档" : "收录证据并投票"}<ArrowRight /></button></footer></section><aside className="round-side"><div className="evidence-notes"><h2>线索摘录</h2><span>本轮将获得</span>{round.evidenceRewards.map((id) => <div key={id}><FolderOpen /><b>{id}</b><small>{caseData.evidenceBlueprints.find((item) => item.id === id)?.title as string}</small></div>)}</div><img src={round.mode === "assistant" ? poseThink : poseRead} alt="看山陪同调查" /><p>“打开来源，标记一条真正能解释时间的证词。”</p></aside></main></div>;
+  return <div className="v3-page round-page"><CaseHeader round={round} /><main className="round-layout"><RoundTimeline round={round} /><section className="investigation-paper"><header><div><small>ROUND {round.index} / INVESTIGATION</small><h1>{round.title}</h1><p>{round.clue}</p></div><span>{round.shortTitle}</span></header><RoundFocus round={round} /><div className="round-objective"><CheckCircle2 /><div><b>本轮任务</b><p>{round.objective}</p></div></div>{round.mode === "search" || round.mode === "targeted_search" ? <SearchWorkbench round={round} onState={setWorkbench} /> : round.mode === "assistant" ? <AssistantWorkbench onState={setWorkbench} /> : <SnapshotWorkbench round={round} onState={setWorkbench} />}<footer className="round-submit"><p>{workbench.ready ? <><CheckCircle2 />取证条件已满足，可以进入本轮投票。</> : <><ShieldCheck />{isBoundaryRound ? "完成本轮因果边界判断后才能投票。" : "完成页面中的标记和边界确认后才能投票。"}</>}</p><button className="v3-primary" disabled={!workbench.ready || submitting} onClick={complete}>{submitting ? "正在归档" : "收录证据并投票"}<ArrowRight /></button></footer></section><aside className="round-side"><div className="evidence-notes"><h2>线索摘录</h2><span>本轮将获得</span>{round.evidenceRewards.map((id) => <div key={id}><FolderOpen /><b>{id}</b><small>{caseData.evidenceBlueprints.find((item) => item.id === id)?.title as string}</small></div>)}</div><img src={round.mode === "assistant" ? poseThink : poseRead} alt="看山陪同调查" /><p>“{sideHint}”</p></aside></main></div>;
 }
 
 function VotePage() {

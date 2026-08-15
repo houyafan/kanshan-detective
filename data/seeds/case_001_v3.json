@@ -67,11 +67,11 @@
     {
       "id": "R4", "index": 4, "title": "22:20的未读消息", "shortTitle": "工作压力", "mode": "research",
       "clue": "22:20收到次日汇报消息，22:26备忘录写下担忧，之后一段时间心率高于个人常态。",
-      "objective": "阅读研究解读，查看样本与限制，判断它能否直接证明个体因果。",
+      "objective": "把研究机制与本案时间线对照，判断压力假设被加强到什么程度。",
       "focusFacts": [
         {"label": "关键时间", "value": "22:20 消息 / 22:26 担忧备忘", "tone": "blue"},
         {"label": "异常变化", "value": "之后心率高于个人常态", "tone": "red"},
-        {"label": "本轮边界", "value": "研究关联不能直接给本案定因", "tone": "green"}
+        {"label": "证据进展", "value": "压力假设得到显著加强", "tone": "green"}
       ],
       "evidenceRewards": ["E07", "E08"],
       "hook": "现在需要把四种机制放在一起比较。",
@@ -141,11 +141,18 @@
       "limitations": "评论是个人经验与线索，不能替代客观因果证据。"
     },
     {
-      "id": "S_RESEARCH", "roundId": "R4", "title": "压力、高唤醒与睡眠片段化研究解读", "author": "研究内容审核组", "authorType": "研究解读（演示快照）", "url": "https://www.zhihu.com/search?type=content&q=%E5%8E%8B%E5%8A%9B%20%E9%AB%98%E5%94%A4%E9%86%92%20%E7%9D%A1%E7%9C%A0",
-      "body": "部分研究观察到压力、高唤醒状态与睡眠连续性之间存在关联。研究对象、测量方式与个体差异会影响结论适用范围。",
-      "sample": "成年人群体观察研究（联调用演示字段）",
-      "excerpts": ["压力可能通过高唤醒影响入睡后的稳定程度。", "相关性不能直接证明刘看山当晚的个体因果。"],
-      "limitations": "研究提供一般关联，不构成个体医学诊断。"
+      "id": "S_RESEARCH", "roundId": "R4", "title": "快速眼动睡眠参与本能恐惧反应的神经环路机制", "author": "BioArt生物艺术", "authorType": "研究文献解读 · 知乎文章", "url": "https://zhuanlan.zhihu.com/p/460751806",
+      "body": "中科院深圳先进院王立平团队以小鼠为模式动物，揭示丘脑底核 CRH 神经元及 mSTN-CRH-LGP 神经环路共同调控 REM 睡眠与本能防御；在持续威胁环境下，小鼠更易从睡眠中觉醒。",
+      "sample": "小鼠模式动物；光遗传学、化学遗传学、单神经元记录与动物行为实验",
+      "excerpts": ["REM 睡眠改变", "觉醒倾向提高", "睡眠更易碎片化"],
+      "caseAlignment": [
+        {"label": "压力事件", "value": "22:20 收到次日汇报消息"},
+        {"label": "认知反应", "value": "22:26 写下担忧备忘"},
+        {"label": "生理高唤醒", "value": "随后心率持续高于个人常态"},
+        {"label": "睡眠表现", "value": "夜间疑似觉醒与睡眠片段化"}
+      ],
+      "caseConclusion": "压力事件、担忧记录、生理高唤醒与睡眠片段化方向一致，压力是目前解释力较强的假设。",
+      "limitations": "动物研究揭示一般机制，不能单独证明刘看山当晚的个体原因，也不能排除其他变量。"
     },
     {
       "id": "S_COMPARE_A", "roundId": "R6", "title": "睡前手机是最直接的时间占用", "author": "观点A", "authorType": "普通回答（演示快照）", "url": "https://www.zhihu.com/search?type=content&q=%E7%9D%A1%E5%89%8D%E6%89%8B%E6%9C%BA",
@@ -166,7 +173,7 @@
     {"id": "E05", "roundId": "R3", "title": "三次夜间记录", "sourceType": "设备估算", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["NOISE"], "eligibleForFinal": true, "excerpt": "三次疑似觉醒共约26分钟。"},
     {"id": "E06", "roundId": "R3", "title": "评论区证词", "sourceType": "评论", "reliability": "个人经验", "defaultRelation": "补充", "suspectIds": ["NOISE"], "eligibleForFinal": false},
     {"id": "E07", "roundId": "R4", "title": "工作消息与备忘", "sourceType": "情境事实", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["PRESSURE"], "eligibleForFinal": true, "excerpt": "22:20工作消息，22:26记录担忧。"},
-    {"id": "E08", "roundId": "R4", "title": "压力研究解读", "sourceType": "研究", "reliability": "一般规律", "defaultRelation": "补充", "suspectIds": ["PRESSURE"], "eligibleForFinal": true},
+    {"id": "E08", "roundId": "R4", "title": "压力神经环路研究", "sourceType": "动物机制研究", "reliability": "高可信研究", "defaultRelation": "支持", "suspectIds": ["PRESSURE"], "eligibleForFinal": true},
     {"id": "E09", "roundId": "R5", "title": "AI协查记录", "sourceType": "AI综合", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "COLD", "NOISE", "PRESSURE"], "eligibleForFinal": true},
     {"id": "E10", "roundId": "R6", "title": "对照夜记录", "sourceType": "对照事实", "reliability": "事实", "defaultRelation": "削弱", "suspectIds": ["BLUE"], "eligibleForFinal": true, "excerpt": "同样使用手机31分钟，有效睡眠只减少8分钟。"},
     {"id": "E11", "roundId": "R6", "title": "观点对照", "sourceType": "观点比较", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "PRESSURE"], "eligibleForFinal": true},
