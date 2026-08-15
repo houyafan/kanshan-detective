@@ -19,6 +19,7 @@ import {
   Menu,
   MessageCircle,
   Music2,
+  Play,
   Plus,
   Puzzle,
   RotateCcw,
@@ -49,6 +50,7 @@ interface AudioContextValue {
   narrating: boolean;
   toggle: () => void;
   enable: () => Promise<void>;
+  suspendBackground: () => () => void;
   beginNarration: () => () => void;
 }
 
@@ -106,7 +108,7 @@ function AudioProvider({ children }: { children: ReactNode }) {
     else void start();
   }, [start, stop]);
 
-  const beginNarration = useCallback(() => {
+  const suspendBackground = useCallback(() => {
     narrationCountRef.current += 1;
     setNarrating(true);
     audioRef.current?.pause();
@@ -122,6 +124,8 @@ function AudioProvider({ children }: { children: ReactNode }) {
       }
     };
   }, [playBackground]);
+
+  const beginNarration = suspendBackground;
 
   function finishPrompt(withSound: boolean) {
     savePreference("kanshan_audio_prompt_seen", "true");
@@ -145,7 +149,7 @@ function AudioProvider({ children }: { children: ReactNode }) {
     return () => document.removeEventListener("pointerdown", unlock);
   }, [enabled, promptOpen, playBackground]);
 
-  const value = useMemo(() => ({ enabled, playing, narrating, toggle, enable: start, beginNarration }), [enabled, playing, narrating, toggle, start, beginNarration]);
+  const value = useMemo(() => ({ enabled, playing, narrating, toggle, enable: start, suspendBackground, beginNarration }), [enabled, playing, narrating, toggle, start, suspendBackground, beginNarration]);
   return <AudioContext.Provider value={value}>
     <audio ref={audioRef} src={themeMusic} loop preload="auto" onPlay={() => { if (narrationCountRef.current > 0) audioRef.current?.pause(); else setPlaying(true); }} onPause={() => setPlaying(false)} />
     {children}
@@ -318,8 +322,79 @@ const archivedCases = [
 
 function HomePage() {
   const { caseData, run, loading, error, createRun } = useV3();
+  const { suspendBackground } = useAudio();
   const navigate = useNavigate();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const releaseAudioRef = useRef<(() => void) | null>(null);
+  const restoreTimerRef = useRef<number | null>(null);
   const [working, setWorking] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [homeVideoState, setHomeVideoState] = useState<"background" | "playing" | "restoring">("background");
+
+  function releaseVideoAudio() {
+    releaseAudioRef.current?.();
+    releaseAudioRef.current = null;
+  }
+
+  function finishVideoPlayback() {
+    if (homeVideoState === "background" || restoreTimerRef.current !== null) return;
+    setHomeVideoState("restoring");
+    restoreTimerRef.current = window.setTimeout(() => {
+      const video = videoRef.current;
+      if (video) {
+        video.pause();
+        video.currentTime = 0;
+        video.loop = true;
+        video.muted = true;
+        void video.play().catch(() => undefined);
+      }
+      releaseVideoAudio();
+      restoreTimerRef.current = null;
+      setHomeVideoState("background");
+    }, 820);
+  }
+
+  function playIntro() {
+    const video = videoRef.current;
+    if (!video || videoFailed || !videoReady || homeVideoState !== "background") return;
+    if (restoreTimerRef.current !== null) window.clearTimeout(restoreTimerRef.current);
+    releaseAudioRef.current = suspendBackground();
+    video.loop = false;
+    video.muted = false;
+    video.currentTime = 0;
+    setHomeVideoState("playing");
+    void video.play().catch(() => {
+      releaseVideoAudio();
+      video.loop = true;
+      video.muted = true;
+      setHomeVideoState("background");
+    });
+  }
+
+  function handleVideoFailure() {
+    const video = videoRef.current;
+    video?.pause();
+    releaseVideoAudio();
+    setVideoFailed(true);
+    setVideoReady(false);
+    setHomeVideoState("background");
+  }
+
+  useEffect(() => {
+    if (homeVideoState === "background") return;
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") finishVideoPlayback();
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [homeVideoState]);
+
+  useEffect(() => () => {
+    if (restoreTimerRef.current !== null) window.clearTimeout(restoreTimerRef.current);
+    releaseVideoAudio();
+  }, []);
+
   if (loading) return <LoadingPage />;
   if (!caseData || error) return <div className="v3-fatal"><X /><h1>案件调取失败</h1><p>{error}</p></div>;
 
@@ -331,10 +406,12 @@ function HomePage() {
   }
 
   const closed = run?.status === "CLOSED";
-  return <main className="v3-home">
+  return <main className={`v3-home ${homeVideoState === "playing" ? "is-intro-playing" : homeVideoState === "restoring" ? "is-intro-restoring" : ""}`}>
     <header><div className="v3-wordmark large"><span>看山</span><strong>侦探事务所</strong><small>KANSHAN DETECTIVE AGENCY</small></div><div className="home-header-actions"><div className="open-light"><i /> 今夜营业中</div><SoundToggle /></div></header>
-    <section className="v3-home-stage">
-      <div className="v3-home-copy"><small>全新案件 / 7轮调查</small><h1>有人偷走了<br /><em>45分钟。</em></h1><p>每轮证据都可能改变你的判断。先别急着猜，真正的侦探会把每个结论带回来源。</p><div><span><Clock3 />{caseData.duration}</span><span><Search />知乎真实搜索</span><span><Bot />知乎直答协查</span></div><Link className="v3-custom-commission-entry" to="/commission"><Plus /><span><strong>自行发起委托</strong><small>输入问题，生成你的调查线索</small></span><i>NEW</i><ArrowRight /></Link></div>
+    <section className={`v3-home-stage ${videoFailed ? "is-video-fallback" : ""}`}>
+      <video ref={videoRef} className={`home-video-bg ${videoFailed ? "is-unavailable" : ""} ${homeVideoState !== "background" ? "is-immersive" : ""}`} src="/assets/kanshan/kanshan-intro.mp4" autoPlay muted loop playsInline preload="metadata" onCanPlay={() => setVideoReady(true)} onError={handleVideoFailure} onEnded={finishVideoPlayback} aria-hidden="true" />
+      {homeVideoState !== "background" && <div className="home-video-overlay"><span>看山短剧 · CASE 001</span><button type="button" onClick={finishVideoPlayback} aria-label="关闭介绍片" title="关闭介绍片"><X /></button></div>}
+      <div className="v3-home-copy"><small>全新案件 / 7轮调查</small><h1>有人偷走了<br /><em>45分钟。</em></h1><p>每轮证据都可能改变你的判断。先别急着猜，真正的侦探会把每个结论带回来源。</p><div><span><Clock3 />{caseData.duration}</span><span><Search />知乎真实搜索</span><span><Bot />知乎直答协查</span></div>{!videoFailed && <button className="home-intro-play" type="button" onClick={playIntro} disabled={!videoReady} aria-label="播放看山介绍片"><Play />{videoReady ? "播放介绍片" : "介绍片加载中"}</button>}<Link className="v3-custom-commission-entry" to="/commission"><Plus /><span><strong>自行发起委托</strong><small>输入问题，生成你的调查线索</small></span><i>NEW</i><ArrowRight /></Link></div>
       <div className="v3-home-focus" />
       <article className="v3-case-card"><div><span>今日案件</span><b>NEW</b><small>{caseData.caseNumber}</small></div><h2>{caseData.title}</h2><p>{caseData.question}</p><dl><div><dt>难度</dt><dd>进阶</dd></div><div><dt>轮次</dt><dd>7轮</dd></div><div><dt>进度</dt><dd>{closed ? "100%" : run ? `${Math.min(100, Math.round((run.currentRound / 7) * 100))}%` : "0%"}</dd></div></dl>{run ? <button className="v3-primary" onClick={() => navigate(routeFor(run))}>{closed ? "查看结案报告" : "继续调查"} <ArrowRight /></button> : <button className="v3-primary" disabled={working} onClick={begin}>{working ? "正在建档" : "接受委托"}<ArrowRight /></button>}<button className="v3-text-button" onClick={begin}><RotateCcw /> 新建调查</button></article>
     </section>
