@@ -443,65 +443,93 @@ def score_final_decision(body: FinalBody, selected: list[dict[str, Any]], red_he
     selected_ids = {item["id"] for item in selected}
     reason = body.reason.strip()
 
-    reconstruction = {"PRESSURE": 20, "COLD": 10, "NOISE": 10, "BLUE": 3}.get(body.culpritId, 0)
-    reconstruction += 7 if body.accompliceId == "COLD" else 5 if body.accompliceId == "NOISE" else 0
-    reconstruction += 3 if red_herring["id"] == "E01" else 0
-    reconstruction = min(30, reconstruction)
+    completion = 5
 
-    evidence_points = {"E07": 12, "E10": 12, "E05": 8, "E03": 6, "E08": 5, "E04": 4, "E02": 2, "E06": 2, "E09": 0}
-    evidence_quality = sum(evidence_points.get(evidence_id, 0) for evidence_id in selected_ids)
-    selected_relations = {item.get("relation") for item in selected}
-    if "支持" in selected_relations and "削弱" in selected_relations:
-        evidence_quality += 6
-    evidence_quality = min(30, evidence_quality)
-
-    counter_evidence = 12 if red_herring["id"] == "E01" else 0
-    if selected_ids.intersection({"E10", "E13"}):
-        counter_evidence += 5
-    explains_25_of_45 = "25" in reason and "45" in reason and contains_any(reason, ["不能", "不足", "只", "部分"])
-    if explains_25_of_45:
-        counter_evidence += 3
-    counter_evidence = min(20, counter_evidence)
-
-    cites_case_fact = contains_any(reason, ["22:20", "22:26", "工作消息", "担忧备忘", "心率", "对照夜", "31分钟", "16:40", "三次声音"])
-    explains_mechanism = "压力" in reason and contains_any(reason, ["高唤醒", "担忧", "心率", "碎片", "稳定", "觉醒"])
-    explains_other_limits = contains_any(reason, ["手机", "咖啡", "噪声", "声音"]) and contains_any(reason, ["不能", "不足", "只能", "部分", "无法", "不充分"])
-    keeps_boundary = contains_any(reason, ["可能", "支持", "不能直接证明", "不能证明", "相关", "因果", "候选", "不充分"])
-    absolute_claim = contains_any(reason, ["研究已经证明刘看山", "医生已经证明刘看山", "看山助手已经证明", "研究证明刘看山就是", "必然是唯一原因", "确定是唯一原因"])
-    boundary_score = sum([cites_case_fact, explains_mechanism, explains_other_limits, keeps_boundary]) * 5
-    if absolute_claim:
-        boundary_score = min(boundary_score, 10)
-
-    score = reconstruction + evidence_quality + counter_evidence + boundary_score
-    has_weaken_evidence = bool(selected_ids.intersection({"E10", "E13"})) or "削弱" in selected_relations
-    s_hard_conditions = {
-        "culprit": body.culpritId == "PRESSURE",
-        "individualFact": "E07" in selected_ids,
-        "counterEvidence": has_weaken_evidence,
-        "redHerring": red_herring["id"] == "E01",
-        "reasonComplete": cites_case_fact and explains_mechanism and explains_other_limits,
-        "boundarySafe": not absolute_claim,
+    culprit_score = {"PRESSURE": 35, "COLD": 28, "NOISE": 28, "BLUE": 20}.get(body.culpritId, 0)
+    accomplice_score = {"PRESSURE": 12, "COLD": 12, "NOISE": 10, "BLUE": 8}.get(body.accompliceId, 0)
+    factor_terms = {
+        "PRESSURE": ["压力", "工作", "汇报", "担忧", "心率", "高唤醒"],
+        "COLD": ["冷萃", "咖啡", "咖啡因", "拿铁"],
+        "NOISE": ["噪声", "声音", "夜间", "觉醒"],
+        "BLUE": ["蓝光", "手机", "屏幕", "刷手机"],
     }
-    grade = "S" if score >= 85 and all(s_hard_conditions.values()) else "A" if score >= 65 else "B"
+    has_multiple_factors = body.accompliceId is not None
+    explains_both_factors = bool(
+        body.accompliceId
+        and contains_any(reason, factor_terms.get(body.culpritId, []))
+        and contains_any(reason, factor_terms.get(body.accompliceId, []))
+        and contains_any(reason, ["主因", "帮凶", "共同", "分别", "作用", "影响", "解释", "触发"])
+    )
+    multi_factor_score = (5 if has_multiple_factors else 0) + (3 if explains_both_factors else 0)
+    reconstruction = culprit_score + accomplice_score + multi_factor_score
+
+    case_fact_ids = {"E03", "E05", "E07", "E10"}
+    limiting_evidence_ids = {"E08", "E10", "E13"}
+    selected_relations = {str(item.get("relation", "")) for item in selected}
+    chosen_suspects = {body.culpritId}
+    if body.accompliceId:
+        chosen_suspects.add(body.accompliceId)
+    chosen_suspects.update(red_herring.get("suspectIds", []))
+    has_related_evidence = any(
+        chosen_suspects.intersection(item.get("suspectIds", []))
+        or item.get("relation") == "削弱"
+        for item in selected
+    )
+    evidence_quality = 8 if len(selected_ids) == 2 else 0
+    evidence_quality += 4 if selected_ids.intersection(case_fact_ids) else 0
+    evidence_quality += 4 if selected_ids.intersection(limiting_evidence_ids) or "削弱" in selected_relations else 0
+    evidence_quality += 4 if has_related_evidence else 0
+    evidence_quality = min(20, evidence_quality)
+
+    red_herring_id = red_herring["id"]
+    misleading_score = 10 if red_herring_id == "E01" else 4 if red_herring_id in case_fact_ids else 7
+
+    selected_evidence_terms = {
+        "E01": ["E01", "手机使用", "25分钟"],
+        "E02": ["E02", "用户经验", "个人经验"],
+        "E03": ["E03", "咖啡订单", "16:40", "拿铁"],
+        "E04": ["E04", "专业建议", "医生建议"],
+        "E05": ["E05", "夜间记录", "三次声音", "疑似觉醒"],
+        "E06": ["E06", "评论区", "评论"],
+        "E07": ["E07", "工作消息", "担忧备忘", "22:20", "22:26"],
+        "E08": ["E08", "压力研究", "研究"],
+        "E09": ["E09", "看山助手", "AI协查"],
+        "E10": ["E10", "对照夜", "31分钟"],
+        "E12": ["E12", "支持证据"],
+        "E13": ["E13", "挑战证据", "反证"],
+    }
+    mentions_selected_evidence = any(contains_any(reason, selected_evidence_terms.get(evidence_id, [evidence_id])) for evidence_id in selected_ids)
+    mentions_chosen_suspect = any(contains_any(reason, factor_terms.get(suspect_id, [])) for suspect_id in chosen_suspects)
+    explains_evidence_relation = mentions_selected_evidence and mentions_chosen_suspect and contains_any(
+        reason, ["说明", "支持", "影响", "解释", "关联", "导致", "共同", "不足", "证明", "削弱"]
+    )
+    keeps_boundary = contains_any(reason, ["可能", "共同作用", "不足以", "不能单独证明", "不能直接证明", "不充分"])
+    reasoning_score = 4 if len(reason) >= 20 else 0
+    reasoning_score += 3 if explains_evidence_relation else 0
+    reasoning_score += 3 if keeps_boundary else 0
+
+    score = completion + reconstruction + evidence_quality + misleading_score + reasoning_score
+    grade = "S" if score >= 80 else "A" if score >= 55 else "B"
     grade_copy = {
-        "S": ("证据链完整", "你不仅找到了最可能的主因，还通过案件事实、对照证据和反证排除了最显眼的干扰项。你的结论保留了必要的证据边界。"),
-        "A": ("主要方向成立", "你找到了案件的主要方向，证据也能支持当前判断。不过，角色关系、反证或因果边界仍有一处没有完全闭合。"),
-        "B": ("调查完成，结论仍待复核", "你完成了全部调查并形成了自己的判断，但目前的结论仍较依赖显眼线索或一般观点。补充个体事实和反证后，证据链会更加完整。"),
+        "S": ("证据链完整", "你完成了较完整的案件重建，关键角色和证据关系基本成立。即使仍有个别线索需要复核，整体证据链已经能够支撑结案。"),
+        "A": ("主要方向成立", "你找到了案件的主要方向，也使用了有效证据。角色关系或反证仍有少量缺口，但已经形成了一套合理解释。"),
+        "B": ("调查完成，仍待复核", "你完成了调查并给出了自己的结论。目前判断仍较依赖部分显眼线索，补充共同作用因素或对照证据后，案件重建会更加完整。"),
     }
     grade_name, grade_description = grade_copy[grade]
     reasons = [
-        grade_dimension("reconstruction", "案件重建", reconstruction, 30, 25, 10, "主因与共同作用角色判断一致", "主要方向成立，角色关系仍可补充", "尚未形成完整的案件角色重建"),
-        grade_dimension("evidence", "证据质量", evidence_quality, 30, 24, 8, "同时使用事实与对照证据", "已有支持材料，对照或事实仍可加强", "关键证据较依赖一般观点"),
-        grade_dimension("counterEvidence", "反证意识", counter_evidence, 20, 17, 5, "识别误导线索并使用削弱证据", "已注意到证据缺口，反证链仍待闭合", "尚未识别最显眼的误导线索"),
-        grade_dimension("boundaries", "推理边界", boundary_score, 20, 15, 5, "保留了相关与因果的区别", "已保留部分限制，仍有绝对化风险", "理由尚未说明证据限制"),
+        grade_dimension("completion", "完成调查", completion, 5, 5, 1, "完成七轮调查并提交最终指认", "调查流程尚未完全结束", "尚未完成最终指认"),
+        grade_dimension("reconstruction", "案件重建", reconstruction, 55, 45, 28, "关键角色与共同作用关系基本成立", "主要方向成立，第二作用因素仍可补充", "案件角色关系仍待重建"),
+        grade_dimension("evidence", "关键证据", evidence_quality, 20, 16, 8, "证据与最终判断形成了有效关系", "已完成证据选择，事实或反证结构仍可加强", "关键证据与最终判断的关系较弱"),
+        grade_dimension("misleading", "误导线索", misleading_score, 10, 10, 4, "识别出最显眼但不充分的手机线索", "已识别一条需要谨慎使用的线索", "尚未识别需要复核的显眼线索"),
+        grade_dimension("reasoning", "推理理由", reasoning_score, 10, 7, 4, "说明了证据关系并保留推理边界", "完成了理由表达，证据关系仍可展开", "指认理由仍待补充"),
     ]
     return {
+        "gradingVersion": "V2",
         "grade": grade,
         "score": score,
         "gradeName": grade_name,
         "gradeDescription": grade_description,
         "gradeReasons": reasons,
-        "gradeHardConditions": s_hard_conditions,
     }
 
 

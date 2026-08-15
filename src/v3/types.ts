@@ -147,12 +147,13 @@ export interface ReportRecommendation {
 
 export interface V3Report {
   reportId: string;
+  gradingVersion?: string;
   grade: string;
   score: number;
   gradeName: string;
   gradeDescription: string;
   gradeReasons: Array<{
-    id: "reconstruction" | "evidence" | "counterEvidence" | "boundaries";
+    id: "completion" | "reconstruction" | "evidence" | "misleading" | "reasoning";
     label: string;
     score: number;
     maxScore: number;

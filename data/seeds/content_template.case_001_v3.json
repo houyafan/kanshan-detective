@@ -35,12 +35,12 @@
   },
   "reportReview": {
     "gradingRulesChecked": false,
-    "sGradeHardConditionsChecked": false,
+    "noSGradeHardConditionsChecked": false,
     "gradeReasonCopyChecked": false,
     "recommendationLinksChecked": false,
     "approvedRecommendationCount": 5,
     "kanshanClosingCopyChecked": false,
-    "notes": "评级仅使用案件重建、证据质量、反证意识和推理边界；改票次数与调查耗时不得计分。"
+    "notes": "V2评级完全按总分定级：S为80—100分，A为55—79分，B为0—54分；不得设置S级硬门槛，改票次数与调查耗时不得计分。"
   },
   "sources": [
     {
