@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import { Link, Navigate, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { v3Api } from "./api";
-import type { EvidenceRecord, RoundConfig, SearchResult, SourceSnapshot, Suspect, V3Case, V3Run } from "./types";
+import type { AssistantPrompt, EvidenceRecord, RoundConfig, SearchResult, SourceSnapshot, Suspect, V3Case, V3Run } from "./types";
 import "./styles.css";
 
 const poseSearch = "/assets/kanshan/kanshan-pose-search.png";
@@ -399,23 +399,36 @@ function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (v
   </section>;
 }
 
-function AssistantWorkbench({ onState }: { onState: (value: WorkbenchResult) => void }) {
+function AssistantPromptIcon({ id }: { id: string }) {
+  if (id === "personal-clues") return <FileSearch />;
+  if (id === "sleep-stages") return <Smartphone />;
+  if (id === "timeline") return <History />;
+  return <ShieldCheck />;
+}
+
+function AssistantWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
   const { caseData, run, setRun, setToast } = useV3();
-  const [question, setQuestion] = useState("");
-  const [sending, setSending] = useState(false);
+  const [activePromptId, setActivePromptId] = useState<string | null>(null);
+  const [sendingPromptId, setSendingPromptId] = useState<string | null>(null);
   const turns = run?.assistantTurns || [];
-  useEffect(() => { onState({ ready: turns.length >= 2, payload: { evidence: { E09: { excerpt: "AI协查区分了直接占用时间与睡眠稳定性，并指出仍需对照夜验证。", relation: "补充", limitations: "AI综合不能作为最终唯一关键证据。" } } } }); }, [turns.length]);
-  async function send(text = question) {
-    if (!run || text.trim().length < 2 || turns.length >= 2) return;
-    setSending(true);
+  const prompts = round.assistantPrompts || [];
+  const viewedQuestions = new Set(turns.map((turn) => turn.question));
+  const viewedCount = prompts.filter((prompt) => viewedQuestions.has(prompt.question)).length;
+  const activePrompt = prompts.find((prompt) => prompt.id === activePromptId)
+    || prompts.find((prompt) => viewedQuestions.has(prompt.question));
+  useEffect(() => { onState({ ready: viewedCount >= 1, payload: { evidence: { E09: { excerpt: "看山助手区分了本人线索与一般规律，梳理手机和压力的作用阶段，并指出下一轮仍需用对照夜核查。", relation: "补充", limitations: "看山助手只整理证据与缺口，不能替代玩家完成因果判断。" } } } }); }, [viewedCount]);
+  async function selectPrompt(prompt: AssistantPrompt) {
+    setActivePromptId(prompt.id);
+    if (!run || viewedQuestions.has(prompt.question)) return;
+    setSendingPromptId(prompt.id);
     try {
-      await v3Api.assistant(run.runId, text.trim());
-      setRun(await v3Api.getRun(run.runId)); setQuestion("");
+      await v3Api.assistant(run.runId, prompt.question);
+      setRun(await v3Api.getRun(run.runId));
     } catch (err) { setToast(err instanceof Error ? err.message : "协查失败"); }
-    finally { setSending(false); }
+    finally { setSendingPromptId(null); }
   }
-  const sourceCards = caseData?.sources.filter((item) => ["S_DOCTOR", "S_RESEARCH"].includes(item.id)) || [];
-  return <section className="assistant-workbench"><div className="assistant-boundary"><Bot />AI协查不等同于案件事实；最终指认必须由你完成。</div><div className="chat-list"><div className="chat-kanshan"><img src={poseThink} alt="AI看山助手" /><p>现有证据出现了重叠解释。你想先比较四名嫌疑人的作用，还是先找最大的证据缺口？</p></div>{turns.map((turn) => <div key={turn.turnId} className="chat-turn"><div className="chat-user">你：{turn.question}</div><div className="chat-answer"><Sparkles /><p>{turn.answer}</p>{turn.fallbackUsed && <small>模板协查 · 直答服务已降级</small>}</div></div>)}</div>{turns.length < 2 && <><div className="assistant-prompts">{["四名嫌疑人分别影响哪个阶段？", "哪些信息只能说明相关，不能证明因果？", "为什么手机25分钟不能解释全部45分钟？"].map((item) => <button key={item} onClick={() => send(item)}>{item}</button>)}</div><form onSubmit={(event) => { event.preventDefault(); void send(); }}><input value={question} onChange={(event) => setQuestion(event.target.value)} maxLength={120} placeholder="向看山助手追问证据缺口..." /><button disabled={sending || question.trim().length < 2}>{sending ? "整理证据中" : "发送"}</button></form></>}<div className="assistant-citations"><h3>允许引用的审核来源</h3>{sourceCards.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer"><BookOpen /><span><b>{source.title}</b><small>{source.authorType}</small></span><ExternalLink /></a>)}</div></section>;
+  const sourceCards = caseData?.sources.filter((item) => ["S_DOCTOR", "S_COMMENTS", "S_RESEARCH"].includes(item.id)) || [];
+  return <section className="assistant-workbench"><div className="assistant-boundary"><Bot /><b>看山助手的回答是推理提示，不是案件事实或标准答案。</b></div><div className="assistant-collab"><section className="assistant-conversation"><header><img src={poseThink} alt="刘看山助手正在整理证据" /><div><h2>看山助手 <span>证据整理模式</span></h2><p>{round.assistantIntro}</p></div></header>{activePrompt ? <div className="assistant-dialogue"><div className="assistant-user-prompt">{activePrompt.question}<i>你</i></div><article className="assistant-analysis"><header><Sparkles /><div><small>{activePrompt.tag}</small><h3>{activePrompt.question}</h3></div></header><p>{activePrompt.intro}</p><div className="assistant-analysis-points">{activePrompt.points.map((point, index) => <div key={`${point.label}-${index}`} data-tone={point.tone || "neutral"}><b>{point.label}</b><p>{point.text}</p></div>)}</div><aside><Sparkles /><p><b>看山助手提示</b>{activePrompt.observation}</p></aside></article></div> : <div className="assistant-empty"><Bot /><b>选择一个角度开始协查</b><p>建议先看“哪些线索直接来自刘看山当晚？”。</p></div>}<footer>这些标准帮助你比较证据，不会自动生成答案。</footer></section><aside className="assistant-angle-panel"><header><h3>换个角度继续问</h3><p>点击问题，看山助手会切换分析视角</p></header><div className="assistant-prompt-list">{prompts.map((prompt) => { const selected = activePrompt?.id === prompt.id; const viewed = viewedQuestions.has(prompt.question); return <button key={prompt.id} className={selected ? "selected" : ""} onClick={() => void selectPrompt(prompt)} disabled={sendingPromptId !== null && sendingPromptId !== prompt.id}><AssistantPromptIcon id={prompt.id} /><span><b>{prompt.question}</b><small>{prompt.tag}</small></span>{sendingPromptId === prompt.id ? <i className="assistant-loading-dot" /> : viewed ? <CheckCircle2 /> : <ArrowRight />}</button>; })}</div><div className="assistant-progress"><span>已查看 <b>{viewedCount}</b> / {prompts.length} 个分析视角</span><div><i style={{ width: `${prompts.length ? (viewedCount / prompts.length) * 100 : 0}%` }} /></div></div><details className="assistant-citations"><summary><BookOpen />查看本轮引用材料（{sourceCards.length}）<ArrowRight /></summary>{sourceCards.map((source) => <a key={source.id} href={source.url} target="_blank" rel="noreferrer"><BookOpen /><span><b>{source.title}</b><small>{source.authorType}</small></span><ExternalLink /></a>)}</details></aside></div></section>;
 }
 
 function RoundFocus({ round }: { round: RoundConfig }) {
@@ -439,6 +452,8 @@ function RoundPage() {
       ? "评论提供经验与线索，不替代因果证据。"
       : round.mode === "research"
         ? "高可信研究增强假设，但不能替个体定案。"
+        : round.mode === "assistant"
+          ? "我只帮你整理证据，不替你下结论。"
         : "打开来源，标记一条真正能解释时间的证词。";
 
   async function complete() {
@@ -451,7 +466,7 @@ function RoundPage() {
     finally { setSubmitting(false); }
   }
 
-  return <div className="v3-page round-page"><CaseHeader round={round} /><main className="round-layout"><RoundTimeline round={round} /><section className="investigation-paper"><header><div><small>ROUND {round.index} / INVESTIGATION</small><h1>{round.title}</h1><p>{round.clue}</p></div><span>{round.shortTitle}</span></header><RoundFocus round={round} /><div className="round-objective"><CheckCircle2 /><div><b>本轮任务</b><p>{round.objective}</p></div></div>{round.mode === "search" || round.mode === "targeted_search" ? <SearchWorkbench round={round} onState={setWorkbench} /> : round.mode === "assistant" ? <AssistantWorkbench onState={setWorkbench} /> : <SnapshotWorkbench round={round} onState={setWorkbench} />}<footer className="round-submit"><p>{workbench.ready ? <><CheckCircle2 />取证条件已满足，可以进入本轮投票。</> : <><ShieldCheck />{isBoundaryRound ? "完成本轮因果边界判断后才能投票。" : "完成页面中的标记和边界确认后才能投票。"}</>}</p><button className="v3-primary" disabled={!workbench.ready || submitting} onClick={complete}>{submitting ? "正在归档" : "收录证据并投票"}<ArrowRight /></button></footer></section><aside className="round-side"><div className="evidence-notes"><h2>线索摘录</h2><span>本轮将获得</span>{round.evidenceRewards.map((id) => <div key={id}><FolderOpen /><b>{id}</b><small>{caseData.evidenceBlueprints.find((item) => item.id === id)?.title as string}</small></div>)}</div><img src={round.mode === "assistant" ? poseThink : poseRead} alt="看山陪同调查" /><p>“{sideHint}”</p></aside></main></div>;
+  return <div className="v3-page round-page"><CaseHeader round={round} /><main className="round-layout"><RoundTimeline round={round} /><section className="investigation-paper"><header><div><small>ROUND {round.index} / INVESTIGATION</small><h1>{round.title}</h1><p>{round.clue}</p></div><span>{round.shortTitle}</span></header><RoundFocus round={round} /><div className="round-objective"><CheckCircle2 /><div><b>本轮任务</b><p>{round.objective}</p></div></div>{round.mode === "search" || round.mode === "targeted_search" ? <SearchWorkbench round={round} onState={setWorkbench} /> : round.mode === "assistant" ? <AssistantWorkbench round={round} onState={setWorkbench} /> : <SnapshotWorkbench round={round} onState={setWorkbench} />}<footer className="round-submit"><p>{workbench.ready ? <><CheckCircle2 />{round.mode === "assistant" ? "已完成一次 AI 协查，可以继续查看，也可以进入投票。" : "取证条件已满足，可以进入本轮投票。"}</> : <><ShieldCheck />{isBoundaryRound ? "完成本轮因果边界判断后才能投票。" : round.mode === "assistant" ? "至少查看一个看山助手分析视角后即可投票。" : "完成页面中的标记和边界确认后才能投票。"}</>}</p><button className="v3-primary" disabled={!workbench.ready || submitting} onClick={complete}>{submitting ? "正在归档" : round.mode === "assistant" ? "带着线索进入投票" : "收录证据并投票"}<ArrowRight /></button></footer></section><aside className="round-side"><div className="evidence-notes"><h2>线索摘录</h2><span>本轮将获得</span>{round.evidenceRewards.map((id) => <div key={id}><FolderOpen /><b>{id}</b><small>{caseData.evidenceBlueprints.find((item) => item.id === id)?.title as string}</small></div>)}</div><img src={round.mode === "assistant" ? poseThink : poseRead} alt="看山陪同调查" /><p>“{sideHint}”</p></aside></main></div>;
 }
 
 function VotePage() {

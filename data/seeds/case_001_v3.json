@@ -78,17 +78,74 @@
       "fallbackAnswer": "压力让手机和噪声有了另一种解释：它们可能是表现或触发，但研究仍只提供一般关联。"
     },
     {
-      "id": "R5", "index": 5, "title": "呼叫知乎AI看山助手", "shortTitle": "AI协查", "mode": "assistant",
-      "clue": "四名嫌疑人的解释开始重叠。看山助手将基于已解锁证据比较作用方式、指出缺口，但不会替你裁定真凶。",
-      "objective": "完成两轮提问、查看来源卡，并提取一条综合推断。",
+      "id": "R5", "index": 5, "title": "向看山助手提问", "shortTitle": "AI协查", "mode": "assistant",
+      "clue": "先整理前四轮证据，找出仍需核查的缺口，再到下一轮用对照夜检验。",
+      "objective": "至少查看一个分析视角，理解证据作用与缺口后继续调查。",
       "focusFacts": [
-        {"label": "当前局面", "value": "四种机制出现重叠解释", "tone": "red"},
-        {"label": "AI任务", "value": "比较作用阶段并找出证据缺口", "tone": "blue"},
-        {"label": "使用边界", "value": "AI协查不替侦探裁定真凶", "tone": "green"}
+        {"label": "当前局面", "value": "四种解释仍有重叠", "tone": "red"},
+        {"label": "本项目标", "value": "整理线索，不提前投票", "tone": "blue"},
+        {"label": "使用边界", "value": "AI只提示，不替你下结论", "tone": "green"}
       ],
       "evidenceRewards": ["E09"],
       "hook": "还需要找一个同样玩过手机、但其他条件不同的夜晚。",
-      "fallbackAnswer": "手机主要解释入睡前清醒；压力、咖啡和环境刺激可能影响入睡后的稳定程度。下一步需要对照夜。"
+      "fallbackAnswer": "手机主要解释入睡前清醒；压力、咖啡和环境刺激可能影响入睡后的稳定程度。下一步需要对照夜。",
+      "assistantIntro": "我不会替你锁定嫌疑人，但可以帮你比较：哪些是刘看山当晚的个人线索，哪些只是一般规律，以及它们分别能解释睡眠的哪个阶段。",
+      "assistantPrompts": [
+        {
+          "id": "personal-clues",
+          "question": "哪些线索直接来自刘看山当晚？",
+          "tag": "建议先看",
+          "intro": "可以先区分“本人线索”和“一般规律”：",
+          "points": [
+            {"label": "手机", "tone": "blue", "text": "存在睡前手机活动记录，能够确认他在入睡前使用过手机；但仅凭使用记录，还不能确定手机对睡眠造成了多大影响。"},
+            {"label": "工作压力", "tone": "red", "text": "22:20 收到次日汇报消息，22:26 写下担忧备忘，随后心率高于个人常态。三条线索来自不同记录，能够组成一段连续的个人时间线。"},
+            {"label": "咖啡因", "tone": "gold", "text": "16:40 的拿铁订单属于本人事实，但其睡眠影响主要依赖一般研究规律；实际作用还受咖啡因含量和个人代谢影响。"},
+            {"label": "夜间声音", "tone": "orange", "text": "设备确实记录到三次声音，但目前只能确认声音与疑似觉醒在时间上接近，尚不能确定谁先发生。"}
+          ],
+          "observation": "越贴近本人、时间越连续、来源越独立的线索，通常越值得继续核查；但仍不能直接等同于因果结论。"
+        },
+        {
+          "id": "sleep-stages",
+          "question": "手机和压力分别可能影响哪个阶段？",
+          "tag": "阶段对照",
+          "intro": "两种解释关注的睡眠阶段并不完全相同：",
+          "points": [
+            {"label": "手机", "tone": "blue", "text": "更接近“入睡之前”：持续浏览、互动内容或屏幕刺激，可能让大脑保持清醒，因此更适合解释“为什么迟迟没有进入睡眠”。"},
+            {"label": "工作压力", "tone": "red", "text": "可能跨越“入睡前后”：担忧和生理高唤醒既可能让人难以放松，也可能在入睡后影响睡眠稳定性。"},
+            {"label": "其他解释", "tone": "neutral", "text": "咖啡因也可能同时影响入睡和睡眠维持；夜间声音则更接近对某一次觉醒的环境解释。"}
+          ],
+          "observation": "先判断本案需要解释的是“入睡困难”“睡眠碎片化”，还是两者同时存在，再比较不同因素的解释范围。"
+        },
+        {
+          "id": "timeline",
+          "question": "把线索放回时间线，会看到什么？",
+          "tag": "时间线",
+          "intro": "按发生顺序排列，目前可以得到：",
+          "points": [
+            {"label": "16:40", "tone": "gold", "text": "购买大杯拿铁"},
+            {"label": "睡前", "tone": "blue", "text": "存在手机活动记录"},
+            {"label": "22:20", "tone": "red", "text": "收到次日汇报消息"},
+            {"label": "22:26", "tone": "red", "text": "写下担忧备忘"},
+            {"label": "随后", "tone": "red", "text": "心率高于个人常态"},
+            {"label": "夜间", "tone": "orange", "text": "三次声音与疑似觉醒出现在相近时段"},
+            {"label": "当前解读", "tone": "neutral", "text": "手机活动和压力事件都出现在入睡前，能够参与解释睡前清醒；压力线索还伴随担忧记录和生理变化。夜间声音与觉醒接近，但先后关系尚不明确。"}
+          ],
+          "observation": "时间接近能够增强一种解释，但只有在“先发生—后出现变化”的顺序明确时，因果判断才会更有依据。"
+        },
+        {
+          "id": "evidence-gaps",
+          "question": "当前最需要补齐哪些证据？",
+          "tag": "证据缺口",
+          "intro": "四种解释都还有关键缺口：",
+          "points": [
+            {"label": "手机", "tone": "blue", "text": "缺少实际亮屏时长、使用内容，以及停止使用后多久入睡的数据。"},
+            {"label": "工作压力", "tone": "red", "text": "缺少更多平常夜晚的对照，尚不能确定这种心率和睡眠变化是否总在压力事件后出现。"},
+            {"label": "咖啡因", "tone": "gold", "text": "缺少饮品的实际咖啡因含量和刘看山的个人代谢信息。"},
+            {"label": "夜间声音", "tone": "orange", "text": "缺少声音来源、响度以及声音与觉醒的精确先后顺序。"}
+          ],
+          "observation": "证据缺口不代表嫌疑被排除。它提示你判断时应保留多大程度的不确定性。"
+        }
+      ]
     },
     {
       "id": "R6", "index": 6, "title": "另一晚的刘看山", "shortTitle": "对照夜", "mode": "comparison",
@@ -174,7 +231,7 @@
     {"id": "E06", "roundId": "R3", "title": "评论区证词", "sourceType": "评论", "reliability": "个人经验", "defaultRelation": "补充", "suspectIds": ["NOISE"], "eligibleForFinal": false},
     {"id": "E07", "roundId": "R4", "title": "工作消息与备忘", "sourceType": "情境事实", "reliability": "事实", "defaultRelation": "支持", "suspectIds": ["PRESSURE"], "eligibleForFinal": true, "excerpt": "22:20工作消息，22:26记录担忧。"},
     {"id": "E08", "roundId": "R4", "title": "压力神经环路研究", "sourceType": "动物机制研究", "reliability": "高可信研究", "defaultRelation": "支持", "suspectIds": ["PRESSURE"], "eligibleForFinal": true},
-    {"id": "E09", "roundId": "R5", "title": "AI协查记录", "sourceType": "AI综合", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "COLD", "NOISE", "PRESSURE"], "eligibleForFinal": true},
+    {"id": "E09", "roundId": "R5", "title": "看山助手协查记录", "sourceType": "AI证据整理", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "COLD", "NOISE", "PRESSURE"], "eligibleForFinal": true},
     {"id": "E10", "roundId": "R6", "title": "对照夜记录", "sourceType": "对照事实", "reliability": "事实", "defaultRelation": "削弱", "suspectIds": ["BLUE"], "eligibleForFinal": true, "excerpt": "同样使用手机31分钟，有效睡眠只减少8分钟。"},
     {"id": "E11", "roundId": "R6", "title": "观点对照", "sourceType": "观点比较", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "PRESSURE"], "eligibleForFinal": true},
     {"id": "E12", "roundId": "R7", "title": "定向支持证据", "sourceType": "知乎回答", "reliability": "来源证词", "defaultRelation": "支持", "suspectIds": [], "eligibleForFinal": true},

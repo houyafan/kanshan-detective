@@ -6,6 +6,15 @@
   "reviewer": "",
   "reviewedAt": "",
   "globalDisclaimer": "本案内容仅用于知识讨论，不构成医学诊断、治疗或个体健康建议。",
+  "assistantGuidance": {
+    "roundId": "R5",
+    "openingApproved": false,
+    "promptAnswersApproved": false,
+    "pressureAndPhoneGuidanceChecked": false,
+    "causalityBoundaryChecked": false,
+    "nextRoundTransitionChecked": false,
+    "notes": "检查四个预埋问题是否分别总结本人线索、作用阶段、时间线与证据缺口；不得替玩家锁定嫌疑人。"
+  },
   "sources": [
     {
       "roundId": "R2",

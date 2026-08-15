@@ -32,6 +32,21 @@ export interface RoundConfig {
   evidenceRewards: string[];
   hook: string;
   fallbackAnswer: string;
+  assistantIntro?: string;
+  assistantPrompts?: AssistantPrompt[];
+}
+
+export interface AssistantPrompt {
+  id: string;
+  question: string;
+  tag: string;
+  intro: string;
+  points: Array<{
+    label: string;
+    text: string;
+    tone?: "blue" | "red" | "gold" | "orange" | "neutral";
+  }>;
+  observation: string;
 }
 
 export interface SourceSnapshot {

@@ -208,17 +208,33 @@ def assistant_turn(run_id: str, body: AssistantBody) -> dict[str, Any]:
     existing = next((item for item in state["assistantTurns"] if item["turnId"] == body.turnId), None)
     if existing:
         return existing
-    if len(state["assistantTurns"]) >= 2:
+    same_question = next((item for item in state["assistantTurns"] if item["question"] == body.question.strip()), None)
+    if same_question:
+        return same_question
+    if len(state["assistantTurns"]) >= 4:
         raise HTTPException(status_code=409, detail="ASSISTANT_TURNS_COMPLETE")
 
     config = round_config("R5")
-    evidence_summary = "；".join(f"{item['id']} {item['title']}：{item.get('excerpt', '')}" for item in state["evidenceRecords"][-8:])
-    prompt = (
-        "你是看山侦探事务所的协查助手。只讨论固定案件《失踪的45分钟》，不能裁定真凶，不能诊断或给治疗建议。"
-        "请比较已有证据、指出至少一个仍未解释的缺口，并用一个问题让玩家继续核查。"
-        f"已有证据：{evidence_summary}。玩家问题：{body.question.strip()}"
+    guided_prompt = next(
+        (item for item in config.get("assistantPrompts", []) if item["question"] == body.question.strip()),
+        None,
     )
-    result = answer_zhihu(prompt, config["fallbackAnswer"], timeout_seconds=8)
+    if guided_prompt:
+        point_text = "\n".join(f"{item['label']}：{item['text']}" for item in guided_prompt["points"])
+        result = {
+            "answer": f"{guided_prompt['intro']}\n{point_text}\n观察提示：{guided_prompt['observation']}",
+            "fallbackUsed": False,
+            "source": "prebuilt-case-guidance",
+            "model": "prebuilt-case-guidance",
+        }
+    else:
+        evidence_summary = "；".join(f"{item['id']} {item['title']}：{item.get('excerpt', '')}" for item in state["evidenceRecords"][-8:])
+        prompt = (
+            "你是看山侦探事务所的协查助手。只讨论固定案件《失踪的45分钟》，不能裁定真凶，不能诊断或给治疗建议。"
+            "请比较已有证据、指出至少一个仍未解释的缺口，并用一个问题让玩家继续核查。"
+            f"已有证据：{evidence_summary}。玩家问题：{body.question.strip()}"
+        )
+        result = answer_zhihu(prompt, config["fallbackAnswer"], timeout_seconds=8)
     turn = {
         "turnId": body.turnId,
         "question": body.question.strip(),
@@ -251,8 +267,8 @@ def complete_round(run_id: str, round_id: str, body: CompleteRoundBody) -> dict[
     if progress["status"] == "READY_TO_VOTE":
         return state
     config = round_config(round_id)
-    if round_id == "R5" and len(state["assistantTurns"]) < 2:
-        raise HTTPException(status_code=422, detail="TWO_ASSISTANT_TURNS_REQUIRED")
+    if round_id == "R5" and len(state["assistantTurns"]) < 1:
+        raise HTTPException(status_code=422, detail="ASSISTANT_VIEW_REQUIRED")
 
     overrides = body.payload.get("evidence", {})
     blueprints = {item["id"]: item for item in case_config()["evidenceBlueprints"]}
