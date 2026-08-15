@@ -14,6 +14,7 @@ const errorMessages: Record<string, string> = {
   TWO_ASSISTANT_TURNS_REQUIRED: "请先查看一个看山助手分析视角。",
   ASSISTANT_VIEW_REQUIRED: "请先查看一个看山助手分析视角。",
   COMPARISON_JUDGEMENT_REQUIRED: "请先完成对照夜的证据作用判断。",
+  REVERSE_CHECK_REQUIRED: "请先定义改票条件，并收录不同来源的支持与挑战证据。",
   REASON_EVIDENCE_REQUIRED: "请选择一条已收录证据作为投票理由。",
   DUPLICATE_SUSPECT: "主因和共同作用对象不能是同一名嫌疑人。",
   FINAL_EVIDENCE_INVALID: "请选择两张可用于结案的有效证据。",

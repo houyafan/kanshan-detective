@@ -178,13 +178,13 @@
       }
     },
     {
-      "id": "R7", "index": 7, "title": "针对当前嫌疑继续追查", "shortTitle": "定向复核", "mode": "targeted_search",
-      "clue": "最后一轮根据你当前的判断生成推荐词。你必须同时寻找一条支持证据和一条削弱证据，避免确认偏误。",
-      "objective": "搜索、选择支持与反证，并写下什么证据会让你改票。",
+      "id": "R7", "index": 7, "title": "反向核查当前结论", "shortTitle": "定向复核", "mode": "targeted_search",
+      "clue": "不是再找更多支持，而是主动寻找最可能让你改票的证据。",
+      "objective": "先定义改票条件，再分别寻找支持与挑战材料，检查结论成立的条件。",
       "focusFacts": [
-        {"label": "调查对象", "value": "跟随当前最怀疑的嫌疑人", "tone": "blue"},
-        {"label": "防偏要求", "value": "同时保留一条支持和一条反证", "tone": "red"},
-        {"label": "完成条件", "value": "两条证据必须来自不同来源", "tone": "green"}
+        {"label": "待核查假设", "value": "跟随当前最怀疑的嫌疑人", "tone": "blue"},
+        {"label": "核查规则", "value": "支持与挑战分开检索", "tone": "red"},
+        {"label": "完成条件", "value": "各收录一条不同来源的证据", "tone": "green"}
       ],
       "queriesBySuspect": {
         "BLUE": "手机使用 睡眠潜伏期 总睡眠时间",
@@ -194,7 +194,33 @@
       },
       "evidenceRewards": ["E12", "E13"],
       "hook": "七轮调查已经完成。回到案件板，完成最终指认。",
-      "fallbackAnswer": "你已经同时保留支持和反证。真正的指认需要解释全部45分钟，而不只是选择最显眼的线索。"
+      "fallbackAnswer": "你已经同时保留支持和反证。真正的指认需要解释全部45分钟，而不只是选择最显眼的线索。",
+      "reviewBySuspect": {
+        "BLUE": {
+          "assumption": "睡前手机是主要原因",
+          "changeConditions": ["相似手机使用下，睡眠依然正常", "夜间觉醒发生在停止使用手机之后较久", "其他因素能更完整解释时间线"],
+          "supportQuery": "手机使用 睡眠潜伏期 总睡眠时间 机制",
+          "challengeQuery": "手机 睡眠 相关非因果 个体差异 研究局限"
+        },
+        "COLD": {
+          "assumption": "下午咖啡因是主要原因",
+          "changeConditions": ["相似咖啡摄入下，睡眠依然正常", "实际咖啡因含量低于常见影响范围", "其他因素能更完整解释时间线"],
+          "supportQuery": "咖啡因 半衰期 睡眠效率 夜间觉醒 机制",
+          "challengeQuery": "咖啡因 睡眠 个体代谢 剂量差异 研究局限"
+        },
+        "NOISE": {
+          "assumption": "夜间声音是主要原因",
+          "changeConditions": ["安静环境下仍出现相同觉醒", "声音发生在疑似觉醒之后", "其他因素能更完整解释时间线"],
+          "supportQuery": "环境噪声 微觉醒 睡眠片段化 机制",
+          "challengeQuery": "夜间声音 觉醒 先后关系 替代解释 研究局限"
+        },
+        "PRESSURE": {
+          "assumption": "工作压力是主要原因",
+          "changeConditions": ["相似压力下，睡眠依然正常", "夜间觉醒发生在压力事件之前", "其他因素能更完整解释时间线"],
+          "supportQuery": "工作压力 高唤醒 睡眠碎片化 机制",
+          "challengeQuery": "压力 睡眠 相关非因果 个体差异 研究局限"
+        }
+      }
     }
   ],
   "sources": [
@@ -252,7 +278,7 @@
     {"id": "E10", "roundId": "R6", "title": "对照夜记录", "sourceType": "对照事实", "reliability": "事实", "defaultRelation": "削弱", "suspectIds": ["BLUE"], "eligibleForFinal": true, "excerpt": "同样使用手机31分钟，有效睡眠只减少8分钟。"},
     {"id": "E11", "roundId": "R6", "title": "对照夜证据作用判断", "sourceType": "自然对照", "reliability": "综合推断", "defaultRelation": "补充", "suspectIds": ["BLUE", "PRESSURE"], "eligibleForFinal": true},
     {"id": "E12", "roundId": "R7", "title": "定向支持证据", "sourceType": "知乎回答", "reliability": "来源证词", "defaultRelation": "支持", "suspectIds": [], "eligibleForFinal": true},
-    {"id": "E13", "roundId": "R7", "title": "定向反证", "sourceType": "知乎回答", "reliability": "来源限制", "defaultRelation": "削弱", "suspectIds": [], "eligibleForFinal": true}
+    {"id": "E13", "roundId": "R7", "title": "定向挑战证据", "sourceType": "知乎回答", "reliability": "来源限制", "defaultRelation": "削弱", "suspectIds": [], "eligibleForFinal": true}
   ],
   "truth": {
     "culprit": "PRESSURE",

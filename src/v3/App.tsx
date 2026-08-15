@@ -308,7 +308,11 @@ function SourceCard({ source, children, professional = false, hideHeaderLink = f
 
 interface WorkbenchResult { ready: boolean; payload: Record<string, unknown> }
 
-function SearchWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
+function SearchWorkbench(props: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
+  return props.round.mode === "targeted_search" ? <TargetedSearchWorkbench {...props} /> : <BasicSearchWorkbench {...props} />;
+}
+
+function BasicSearchWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
   const { run, setRun, setToast } = useV3();
   const initialQuery = round.queries?.[0] || (round.queriesBySuspect ? round.queriesBySuspect[run?.votes.at(-1)?.suspectId || "BLUE"] : "");
   const [query, setQuery] = useState(initialQuery || "");
@@ -355,6 +359,76 @@ function SearchWorkbench({ round, onState }: { round: RoundConfig; onState: (val
   }
 
   return <section className="search-workbench"><form onSubmit={submit}><Search /><input value={query} onChange={(event) => setQuery(event.target.value)} maxLength={40} placeholder="输入知乎搜索关键词" /><button disabled={searching || query.trim().length < 2}>{searching ? "调查中" : "搜索"}</button></form><div className="query-chips">{(round.queries || Object.values(round.queriesBySuspect || {})).slice(0, 4).map((item) => <button key={item} onClick={() => setQuery(item)}>{item}</button>)}</div>{searching && <div className="searching-state"><img src={poseSearch} alt="看山搜索知乎" /><p>正在核对知乎标题、摘要和原文链接...</p></div>}<div className="search-results">{results.map((result) => <article key={result.sourceId} className={support?.sourceId === result.sourceId || weaken?.sourceId === result.sourceId ? "selected" : ""}><small>{result.type} · {result.author}{result.fallback ? " · 演示数据" : ""}</small><h3>{result.title}</h3><p>{result.summary}</p><footer><a href={result.url} target="_blank" rel="noreferrer">查看原文 <ExternalLink /></a>{isTargeted ? <div><button className={support?.sourceId === result.sourceId ? "active" : ""} onClick={() => markSupport(result)}>设为支持</button><button className={weaken?.sourceId === result.sourceId ? "active weaken" : ""} onClick={() => markWeaken(result)}>设为反证</button></div> : <button className={support?.sourceId === result.sourceId ? "active" : ""} onClick={() => setSupport(result)}>{support?.sourceId === result.sourceId ? <><Check />已摘录</> : "摘录为证据"}</button>}</footer></article>)}</div>{!searching && !results.length && <div className="search-empty"><FileSearch /><p>提交关键词后，真实知乎搜索结果会出现在这里。</p></div>}</section>;
+}
+
+function challengeResultScore(result: SearchResult) {
+  const text = `${result.title} ${result.summary}`;
+  return ["不等于因果", "非因果", "研究局限", "个体差异", "替代解释", "方法", "局限"].reduce((score, keyword) => score + (text.includes(keyword) ? 1 : 0), 0);
+}
+
+function challengeResultKind(result: SearchResult) {
+  const text = `${result.title} ${result.summary}`;
+  if (["不等于因果", "非因果", "方法", "局限"].some((keyword) => text.includes(keyword))) return "方法边界";
+  if (["个体差异", "替代", "其他因素"].some((keyword) => text.includes(keyword))) return "替代解释";
+  return "反例线索";
+}
+
+function TargetedSearchWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
+  const { caseData, run, setRun, setToast } = useV3();
+  const suspectId = run?.votes.at(-1)?.suspectId || "PRESSURE";
+  const suspect = caseData?.suspects.find((item) => item.id === suspectId);
+  const review = round.reviewBySuspect?.[suspectId] || round.reviewBySuspect?.PRESSURE;
+  const [condition, setCondition] = useState(review?.changeConditions[0] || "");
+  const [supportQuery, setSupportQuery] = useState(review?.supportQuery || "");
+  const [challengeQuery, setChallengeQuery] = useState(review?.challengeQuery || "");
+  const [supportResults, setSupportResults] = useState<SearchResult[]>([]);
+  const [challengeResults, setChallengeResults] = useState<SearchResult[]>([]);
+  const [support, setSupport] = useState<SearchResult | null>(null);
+  const [challenge, setChallenge] = useState<SearchResult | null>(null);
+  const [searchingSide, setSearchingSide] = useState<"support" | "challenge" | null>(null);
+  const [reason, setReason] = useState("");
+  const sourcesDiffer = Boolean(support && challenge && support.sourceId !== challenge.sourceId);
+  const ready = Boolean(condition && sourcesDiffer);
+
+  useEffect(() => {
+    onState({
+      ready,
+      payload: {
+        reviewCondition: condition,
+        changeReason: reason.trim(),
+        supportQuery,
+        challengeQuery,
+        evidence: {
+          E12: support ? { excerpt: support.summary, relation: "支持", sourceId: support.sourceId, sourceTitle: support.title, sourceUrl: support.url, suspectIds: [suspectId] } : {},
+          E13: challenge ? { excerpt: challenge.summary, relation: "削弱", sourceId: challenge.sourceId, sourceTitle: challenge.title, sourceUrl: challenge.url, suspectIds: [suspectId] } : {}
+        }
+      }
+    });
+  }, [condition, reason, support, challenge, supportQuery, challengeQuery, suspectId, ready]);
+
+  async function searchSide(side: "support" | "challenge") {
+    if (!run) return;
+    const searchQuery = side === "support" ? supportQuery.trim() : challengeQuery.trim();
+    if (searchQuery.length < 2) return;
+    setSearchingSide(side);
+    try {
+      const data = await v3Api.search(run.runId, round.id, searchQuery);
+      if (side === "support") { setSupportResults(data.results.slice(0, 3)); setSupport(null); }
+      else { setChallengeResults([...data.results].sort((a, b) => challengeResultScore(b) - challengeResultScore(a)).slice(0, 3)); setChallenge(null); }
+      setRun(await v3Api.getRun(run.runId));
+      if (data.fallbackUsed) setToast("CLI暂不可用，当前显示演示搜索结果");
+    } catch (err) { setToast(err instanceof Error ? err.message : "搜索失败"); }
+    finally { setSearchingSide(null); }
+  }
+
+  return <section className="targeted-review-workbench">
+    <section className="review-step review-condition-step"><header><i>1</i><div><h3>第一步：先定义什么会让我改票</h3><p>如果出现哪种情况，你会降低对“{review?.assumption || suspect?.name}”的怀疑？</p></div></header><div>{review?.changeConditions.map((item) => <button key={item} className={condition === item ? "selected" : ""} onClick={() => setCondition(item)}><span />{item}</button>)}</div><small>先设定改变判断的条件，可以减少只寻找支持材料的确认偏误。</small></section>
+    <section className="review-step review-search-step"><header><i>2</i><div><h3>第二步：启动双向检索</h3><p>同一假设，两种搜索意图</p></div><span>反证不等于相反观点；它也可以是反例、替代解释或方法边界。</span></header><div className="dual-search-grid">
+      <section className="review-search-side support"><header><ShieldCheck /><div><h4>寻找支持证据</h4><small>验证已有解释</small></div></header><form onSubmit={(event) => { event.preventDefault(); void searchSide("support"); }}><Search /><input value={supportQuery} onChange={(event) => setSupportQuery(event.target.value)} maxLength={40} /><button disabled={searchingSide !== null || supportQuery.trim().length < 2}>{searchingSide === "support" ? "搜索中" : "搜索支持"}</button></form><div className="review-result-list">{supportResults.map((result) => <article key={result.sourceId} className={support?.sourceId === result.sourceId ? "selected" : ""}><small>支持结果 · {result.type}{result.fallback ? " · 演示数据" : ""}</small><h5>{result.title}</h5><p>{result.summary}</p><em>一般机制，不能直接证明个体原因</em><footer><button onClick={() => setSupport(result)} disabled={challenge?.sourceId === result.sourceId}>{support?.sourceId === result.sourceId ? <><CheckCircle2 />已收为支持证据</> : "收为支持证据"}</button><a href={result.url} target="_blank" rel="noreferrer">查看来源 <ExternalLink /></a></footer></article>)}</div>{!supportResults.length && <div className="review-search-empty"><Search /><p>搜索支持材料，验证当前解释。</p></div>}</section>
+      <section className="review-search-side challenge"><header><ShieldCheck /><div><h4>寻找挑战证据</h4><small>主动尝试推翻</small></div><div><span>反例</span><span>替代解释</span><span>方法边界</span></div></header><form onSubmit={(event) => { event.preventDefault(); void searchSide("challenge"); }}><Search /><input value={challengeQuery} onChange={(event) => setChallengeQuery(event.target.value)} maxLength={40} /><button disabled={searchingSide !== null || challengeQuery.trim().length < 2}>{searchingSide === "challenge" ? "搜索中" : "搜索挑战"}</button></form><p className="challenge-query-note">系统根据当前假设自动加入否定词、局限词和替代原因。</p><div className="review-result-list">{challengeResults.map((result) => <article key={result.sourceId} className={challenge?.sourceId === result.sourceId ? "selected" : ""}><small>挑战结果 · {challengeResultKind(result)} · {result.type}{result.fallback ? " · 演示数据" : ""}</small><h5>{result.title}</h5><p>{result.summary}</p><em>用于限定结论，不等于完全否定</em><footer><button onClick={() => setChallenge(result)} disabled={support?.sourceId === result.sourceId}>{challenge?.sourceId === result.sourceId ? <><CheckCircle2 />已收为挑战证据</> : "收为挑战证据"}</button><a href={result.url} target="_blank" rel="noreferrer">查看来源 <ExternalLink /></a></footer></article>)}</div>{!challengeResults.length && <div className="review-search-empty"><Search /><p>搜索反例、替代解释和方法边界。</p></div>}</section>
+    </div></section>
+    <section className="review-step review-pair-step"><header><i>3</i><div><h3>第三步：检查证据是否真的形成对照</h3></div></header><div className="review-pair"><article className={support ? "complete" : ""}><small>{support ? "已收录支持 1/1" : "待收录支持 0/1"}</small><b>{support?.title || "请从支持检索中选择一条材料"}</b><span>来源：{support ? `${support.type} · ${support.author}` : "未选择"}</span></article><div className="review-pair-rules"><span className={sourcesDiffer ? "done" : ""}><CheckCircle2 />来自不同来源</span><span className={support && challenge ? "done" : ""}><CheckCircle2 />作用方向相反</span><span className={support && challenge ? "done" : ""}><CheckCircle2 />都标注了适用边界</span></div><article className={challenge ? "complete challenge" : "challenge"}><small>{challenge ? "已收录挑战 1/1" : "待收录挑战 0/1"}</small><b>{challenge?.title || "请从挑战检索中选择一条材料"}</b><span>来源：{challenge ? `${challenge.type} · ${challenge.author}` : "未选择"}</span></article></div><label>哪条证据最可能改变你的票？<input value={reason} onChange={(event) => setReason(event.target.value)} maxLength={120} placeholder="用一句话写下理由（选填）" /></label></section>
+  </section>;
 }
 
 function SnapshotWorkbench({ round, onState }: { round: RoundConfig; onState: (value: WorkbenchResult) => void }) {
@@ -493,7 +567,12 @@ function AssistantWorkbench({ round, onState }: { round: RoundConfig; onState: (
 }
 
 function RoundFocus({ round }: { round: RoundConfig }) {
-  return <section className="round-focus" aria-label="本轮关键判断">{round.focusFacts.map((fact) => <div key={fact.label} data-tone={fact.tone}><small>{fact.label}</small><b>{fact.value}</b></div>)}</section>;
+  const { run } = useV3();
+  const suspectId = run?.votes.at(-1)?.suspectId || "PRESSURE";
+  const facts = round.mode === "targeted_search"
+    ? round.focusFacts.map((fact, index) => index === 0 ? { ...fact, value: round.reviewBySuspect?.[suspectId]?.assumption || fact.value } : fact)
+    : round.focusFacts;
+  return <section className="round-focus" aria-label="本轮关键判断">{facts.map((fact) => <div key={fact.label} data-tone={fact.tone}><small>{fact.label}</small><b>{fact.value}</b></div>)}</section>;
 }
 
 function RoundPage() {

@@ -48,6 +48,12 @@ export interface RoundConfig {
     correctFeedback: string;
     incorrectFeedback: string;
   };
+  reviewBySuspect?: Record<string, {
+    assumption: string;
+    changeConditions: string[];
+    supportQuery: string;
+    challengeQuery: string;
+  }>;
 }
 
 export interface AssistantPrompt {

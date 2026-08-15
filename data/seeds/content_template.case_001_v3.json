@@ -24,6 +24,15 @@
     "judgementCopyApproved": false,
     "notes": "结论只能削弱手机作为唯一主因，不能把咖啡因、工作压力或环境直接升级为唯一原因。"
   },
+  "reverseCheckReview": {
+    "roundId": "R7",
+    "changeConditionsChecked": false,
+    "supportSearchIntentChecked": false,
+    "challengeSearchIntentChecked": false,
+    "differentSourcesChecked": false,
+    "conditionalConclusionChecked": false,
+    "notes": "挑战材料可以是反例、替代解释或方法边界；不得要求它与支持材料形成简单的相反观点。"
+  },
   "sources": [
     {
       "roundId": "R2",

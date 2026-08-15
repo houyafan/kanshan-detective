@@ -271,6 +271,12 @@ def complete_round(run_id: str, round_id: str, body: CompleteRoundBody) -> dict[
         raise HTTPException(status_code=422, detail="ASSISTANT_VIEW_REQUIRED")
     if round_id == "R6" and body.payload.get("comparisonAnswer") != "weaken-phone":
         raise HTTPException(status_code=422, detail="COMPARISON_JUDGEMENT_REQUIRED")
+    if round_id == "R7":
+        review_evidence = body.payload.get("evidence", {})
+        support_source = review_evidence.get("E12", {}).get("sourceId") if isinstance(review_evidence, dict) else None
+        challenge_source = review_evidence.get("E13", {}).get("sourceId") if isinstance(review_evidence, dict) else None
+        if not body.payload.get("reviewCondition") or not support_source or not challenge_source or support_source == challenge_source:
+            raise HTTPException(status_code=422, detail="REVERSE_CHECK_REQUIRED")
 
     overrides = body.payload.get("evidence", {})
     blueprints = {item["id"]: item for item in case_config()["evidenceBlueprints"]}
