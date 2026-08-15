@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   ArrowLeft,
   ArrowRight,
@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Search,
   ShieldCheck,
+  SkipForward,
   Smartphone,
   Sparkles,
   Volume2,
@@ -37,11 +38,15 @@ const poseThink = "/assets/kanshan/kanshan-pose-think.png";
 const poseRead = "/assets/kanshan/kanshan-pose-read.png";
 const poseClose = "/assets/kanshan/kanshan-pose-close.png";
 const themeMusic = "/assets/audio/kanshan-detective-theme.mp3";
+const briefNarration = "/assets/audio/kanshan-dm-case-brief.mp3";
 
 interface AudioContextValue {
   enabled: boolean;
   playing: boolean;
+  narrating: boolean;
   toggle: () => void;
+  enable: () => Promise<void>;
+  beginNarration: () => () => void;
 }
 
 const AudioContext = createContext<AudioContextValue | null>(null);
@@ -64,31 +69,60 @@ function AudioProvider({ children }: { children: ReactNode }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [enabled, setEnabled] = useState(() => readPreference("kanshan_audio_enabled") !== "off");
   const [playing, setPlaying] = useState(false);
+  const [narrating, setNarrating] = useState(false);
   const [promptOpen, setPromptOpen] = useState(() => readPreference("kanshan_audio_prompt_seen") !== "true");
+  const enabledRef = useRef(enabled);
+  const promptOpenRef = useRef(promptOpen);
+  const narrationCountRef = useRef(0);
 
-  async function start() {
-    setEnabled(true);
-    savePreference("kanshan_audio_enabled", "on");
+  const playBackground = useCallback(async () => {
     const audio = audioRef.current;
-    if (!audio) return;
+    if (!audio || !enabledRef.current || promptOpenRef.current || narrationCountRef.current > 0) return;
     audio.volume = 0.24;
     try { await audio.play(); setPlaying(true); } catch { setPlaying(false); }
-  }
+  }, []);
 
-  function stop() {
+  const start = useCallback(async () => {
+    enabledRef.current = true;
+    setEnabled(true);
+    savePreference("kanshan_audio_enabled", "on");
+    await playBackground();
+  }, [playBackground]);
+
+  const stop = useCallback(() => {
+    enabledRef.current = false;
     setEnabled(false);
     savePreference("kanshan_audio_enabled", "off");
     audioRef.current?.pause();
     setPlaying(false);
-  }
+  }, []);
 
-  function toggle() {
-    if (enabled && playing) stop();
+  const toggle = useCallback(() => {
+    if (!enabledRef.current) { void start(); return; }
+    if (narrationCountRef.current > 0 || !audioRef.current?.paused) stop();
     else void start();
-  }
+  }, [start, stop]);
+
+  const beginNarration = useCallback(() => {
+    narrationCountRef.current += 1;
+    setNarrating(true);
+    audioRef.current?.pause();
+    setPlaying(false);
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      narrationCountRef.current = Math.max(0, narrationCountRef.current - 1);
+      if (narrationCountRef.current === 0) {
+        setNarrating(false);
+        void playBackground();
+      }
+    };
+  }, [playBackground]);
 
   function finishPrompt(withSound: boolean) {
     savePreference("kanshan_audio_prompt_seen", "true");
+    promptOpenRef.current = false;
     setPromptOpen(false);
     if (withSound) void start();
     else stop();
@@ -98,26 +132,29 @@ function AudioProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current;
     if (!audio) return;
     audio.volume = 0.24;
+    enabledRef.current = enabled;
+    promptOpenRef.current = promptOpen;
     if (!enabled) { audio.pause(); return; }
     if (promptOpen) return;
-    const unlock = () => { void audio.play().catch(() => setPlaying(false)); };
-    void audio.play().catch(() => setPlaying(false));
+    const unlock = () => { void playBackground(); };
+    void playBackground();
     document.addEventListener("pointerdown", unlock, { once: true });
     return () => document.removeEventListener("pointerdown", unlock);
-  }, [enabled, promptOpen]);
+  }, [enabled, promptOpen, playBackground]);
 
-  const value = useMemo(() => ({ enabled, playing, toggle }), [enabled, playing]);
+  const value = useMemo(() => ({ enabled, playing, narrating, toggle, enable: start, beginNarration }), [enabled, playing, narrating, toggle, start, beginNarration]);
   return <AudioContext.Provider value={value}>
-    <audio ref={audioRef} src={themeMusic} loop preload="auto" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+    <audio ref={audioRef} src={themeMusic} loop preload="auto" onPlay={() => { if (narrationCountRef.current > 0) audioRef.current?.pause(); else setPlaying(true); }} onPause={() => setPlaying(false)} />
     {children}
     {promptOpen && <div className="sound-prompt-backdrop"><section className="sound-prompt" role="dialog" aria-modal="true" aria-labelledby="sound-prompt-title"><div><Music2 /></div><small>沉浸调查模式</small><h2 id="sound-prompt-title">开启声音，体验更佳</h2><p>建议打开背景音乐，进入看山侦探事务所的调查氛围。</p><button className="v3-primary" onClick={() => finishPrompt(true)}><Volume2 />开启声音</button><button className="v3-text-button" onClick={() => finishPrompt(false)}>暂不开启</button></section></div>}
   </AudioContext.Provider>;
 }
 
 function SoundToggle() {
-  const { enabled, playing, toggle } = useAudio();
-  const status = enabled ? (playing ? "播放中" : "待播放") : "已关闭";
-  return <button className={`sound-toggle ${enabled ? "enabled" : ""} ${enabled && !playing ? "waiting" : ""}`} onClick={toggle} aria-pressed={enabled} title={enabled ? "关闭背景音乐" : "开启背景音乐"}>{enabled ? <Volume2 /> : <VolumeX />}<span>声音</span><i>{status}</i></button>;
+  const { enabled, playing, narrating, toggle } = useAudio();
+  const status = enabled ? (narrating ? "看山配音中" : playing ? "播放中" : "待播放") : "已关闭";
+  const title = !enabled ? "开启声音" : narrating || playing ? "关闭声音" : "播放背景音乐";
+  return <button className={`sound-toggle ${enabled ? "enabled" : ""} ${enabled && !playing && !narrating ? "waiting" : ""}`} onClick={toggle} aria-pressed={enabled} title={title}>{enabled ? <Volume2 /> : <VolumeX />}<span>声音</span><i>{status}</i></button>;
 }
 
 interface ContextValue {
@@ -266,6 +303,142 @@ function HomePage() {
   </main>;
 }
 
+type BriefNarrationStatus = "idle" | "playing" | "ended" | "blocked" | "muted" | "error";
+
+const briefNarrationLines = ["先凭直觉投一票。", "真正的侦探，允许自己改主意。"];
+
+function typedNarrationLine(text: string, start: number, end: number, currentTime: number) {
+  if (currentTime <= start) return "";
+  if (currentTime >= end) return text;
+  return text.slice(0, Math.ceil(((currentTime - start) / (end - start)) * text.length));
+}
+
+function BriefNarration({ runId }: { runId: string }) {
+  const { enabled, enable, beginNarration } = useAudio();
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const releaseRef = useRef<(() => void) | null>(null);
+  const frameRef = useRef<number | null>(null);
+  const startingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const [status, setStatus] = useState<BriefNarrationStatus>("idle");
+  const [visibleLines, setVisibleLines] = useState(["", ""]);
+  const storageKey = `kanshan_dm_brief_${runId}`;
+
+  function hasPlayed() {
+    try { return sessionStorage.getItem(storageKey) === "played"; } catch { return false; }
+  }
+
+  function rememberPlayed() {
+    try { sessionStorage.setItem(storageKey, "played"); } catch { /* Session persistence is optional. */ }
+  }
+
+  function showFullTranscript() {
+    if (mountedRef.current) setVisibleLines(briefNarrationLines);
+  }
+
+  function stopFrame() {
+    if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+    frameRef.current = null;
+  }
+
+  function releaseBackground() {
+    releaseRef.current?.();
+    releaseRef.current = null;
+  }
+
+  function finishNarration(nextStatus: BriefNarrationStatus) {
+    stopFrame();
+    startingRef.current = false;
+    releaseBackground();
+    showFullTranscript();
+    if (mountedRef.current) setStatus(nextStatus);
+  }
+
+  function animateTranscript() {
+    const audio = audioRef.current;
+    if (!audio || audio.paused || audio.ended) return;
+    const currentTime = audio.currentTime;
+    setVisibleLines([
+      typedNarrationLine(briefNarrationLines[0], 0.15, 2.55, currentTime),
+      typedNarrationLine(briefNarrationLines[1], 2.8, 6.75, currentTime)
+    ]);
+    frameRef.current = window.requestAnimationFrame(animateTranscript);
+  }
+
+  async function playNarration() {
+    const audio = audioRef.current;
+    if (!audio || startingRef.current || status === "playing") return;
+    startingRef.current = true;
+    stopFrame();
+    audio.pause();
+    audio.currentTime = 0;
+    const reducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    setVisibleLines(reducedMotion ? briefNarrationLines : ["", ""]);
+    setStatus("idle");
+    releaseBackground();
+    releaseRef.current = beginNarration();
+    try {
+      if (!enabled) await enable();
+      await audio.play();
+      if (!mountedRef.current) { audio.pause(); releaseBackground(); return; }
+      rememberPlayed();
+      startingRef.current = false;
+      setStatus("playing");
+      if (!reducedMotion) animateTranscript();
+    } catch {
+      audio.pause();
+      finishNarration("blocked");
+    }
+  }
+
+  function stopNarration(nextStatus: BriefNarrationStatus) {
+    const audio = audioRef.current;
+    if (audio) { audio.pause(); audio.currentTime = 0; }
+    finishNarration(nextStatus);
+  }
+
+  useEffect(() => {
+    mountedRef.current = true;
+    let timer: number | null = null;
+    if (hasPlayed()) {
+      showFullTranscript();
+      setStatus("ended");
+    } else if (!enabled) {
+      showFullTranscript();
+      setStatus("muted");
+    } else {
+      timer = window.setTimeout(() => { void playNarration(); }, 180);
+    }
+    return () => {
+      mountedRef.current = false;
+      if (timer !== null) window.clearTimeout(timer);
+      stopFrame();
+      audioRef.current?.pause();
+      releaseBackground();
+    };
+  }, [runId]);
+
+  useEffect(() => {
+    if (!enabled && (status === "playing" || startingRef.current)) stopNarration("muted");
+    if (enabled && status === "muted" && !hasPlayed()) void playNarration();
+  }, [enabled]);
+
+  const statusLabel = status === "playing" ? "开案主持中" : status === "blocked" ? "点击播放" : status === "muted" ? "声音已关闭" : status === "error" ? "配音暂不可用" : status === "ended" ? "主持完毕" : "准备开案";
+  const replayLabel = status === "muted" ? "开启并播放" : status === "blocked" ? "播放开案配音" : status === "error" ? "重试配音" : "重播";
+  const firstActive = status === "playing" && visibleLines[0].length < briefNarrationLines[0].length;
+  const secondActive = status === "playing" && !firstActive && visibleLines[1].length < briefNarrationLines[1].length;
+
+  return <aside className={`brief-kanshan dm-${status}`}>
+    <div className="dm-bubble">
+      <header><span><i className="dm-wave"><b /><b /><b /></i>看山 DM</span><small>{statusLabel}</small></header>
+      <blockquote aria-label={briefNarrationLines.join(" ")}><span aria-hidden="true" className={firstActive ? "typing" : ""}>{visibleLines[0] || "\u00a0"}</span><span aria-hidden="true" className={secondActive ? "typing" : ""}>{visibleLines[1] || "\u00a0"}</span></blockquote>
+      <footer>{status === "playing" ? <button type="button" onClick={() => stopNarration("ended")}><SkipForward />跳过配音</button> : <button type="button" onClick={() => void playNarration()}><Volume2 />{replayLabel}</button>}</footer>
+    </div>
+    <img className={status === "playing" ? "speaking" : ""} src={poseRead} alt="看山主持开案" />
+    <audio ref={audioRef} src={briefNarration} preload="auto" onEnded={() => finishNarration("ended")} onError={() => finishNarration("error")} />
+  </aside>;
+}
+
 function BriefPage() {
   const { caseData, run, setRun, setToast } = useV3();
   const navigate = useNavigate();
@@ -277,7 +450,7 @@ function BriefPage() {
       navigate("/initial-vote");
     } catch (err) { setToast(err instanceof Error ? err.message : "无法开始"); }
   }
-  return <div className="v3-page"><CaseHeader board={false} /><main className="brief-stage"><article className="brief-dossier"><div className="dossier-tab">CASE 001</div><div className="v3-stamp">机密档案</div><small>CONFIDENTIAL CASE FILE</small><h1>{caseData.question}</h1><div className="case-numbers"><span><Clock3 />在床 8小时</span><span><Clock3 />有效睡眠 7小时15分</span><span><History />缺口 45分钟</span></div><p className="brief-text">{caseData.brief}</p><div className="suspect-grid">{caseData.suspects.map((item) => <SuspectCard suspect={item} key={item.id} compact />)}</div><div className="brief-rule"><ShieldCheck /><p>每轮在知乎内容中取证并重新投票。投票没有即时对错，最终用两张关键证据和一张误导线索完成指认。</p></div><button className="v3-primary dossier-cta" onClick={confirm}>提交初始判断前先阅读规则 <ArrowRight /></button></article><aside className="brief-kanshan"><div>“先凭直觉投一票。<br />真正的侦探，允许自己改主意。”</div><img src={poseRead} alt="看山提醒案件规则" /></aside></main></div>;
+  return <div className="v3-page"><CaseHeader board={false} /><main className="brief-stage"><article className="brief-dossier"><div className="dossier-tab">CASE 001</div><div className="v3-stamp">机密档案</div><small>CONFIDENTIAL CASE FILE</small><h1>{caseData.question}</h1><div className="case-numbers"><span><Clock3 />在床 8小时</span><span><Clock3 />有效睡眠 7小时15分</span><span><History />缺口 45分钟</span></div><p className="brief-text">{caseData.brief}</p><div className="suspect-grid">{caseData.suspects.map((item) => <SuspectCard suspect={item} key={item.id} compact />)}</div><div className="brief-rule"><ShieldCheck /><p>每轮在知乎内容中取证并重新投票。投票没有即时对错，最终用两张关键证据和一张误导线索完成指认。</p></div><button className="v3-primary dossier-cta" onClick={confirm}>提交初始判断前先阅读规则 <ArrowRight /></button></article><BriefNarration runId={run.runId} /></main></div>;
 }
 
 function InitialVotePage() {
